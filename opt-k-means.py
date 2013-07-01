@@ -19,6 +19,8 @@ from numpy import float64 as float
 from itertools import izip, product
 from enumeration import alternate, enumerate_list
 
+MESSAGE = "for %d clusters the intercluster measure is \
+ OPTIMUM:%.2f, SCIPY:%.2f "
 
 def combinations_with_replacement(iterable, r):
     pool = tuple(iterable)
@@ -141,7 +143,12 @@ def intra_cluster(cluster):
     m = numpy.matrix(cluster)
     return numpy.sum(vq(m,centroid)[1])
 
-
+def ensure_dir(d):
+    '''
+    creates a directory if it does not exists
+    '''
+    if not os.path.exists(d):
+        os.makedirs(d)
 
 
 class dataset:
@@ -156,8 +163,16 @@ class dataset:
         #This first approach is not very optimal,
         #combinations may be generated in parallel for each
         #process. TODO
-        self.nombre = 'part_'
-        self.nombre_clusters = 'clusters_'
+        self.directory = 'temp'
+        ensure_dir(self.directory)
+        self.nombre = os.path.join(self.directory,'part_')
+        self.nombre_clusters = os.path.join(self.directory,
+                                            'clusters_')
+        self.m_file = os.path.join(self.directory,
+                                   'minimum_cluster_')
+        self.i_file = os.path.join(self.directory,
+                                   'kmeans_cluster_')
+
         self.dimY = dimY #dimY is the number of rows of the matrix
         self.dimX=dimX #dimX is the number of columns of the matrix
         self.processes = processes
@@ -247,13 +262,14 @@ class dataset:
                     all_p1.add(partition1)
                     new_dist = self.inter_cluster([partition1])
                     if min_dist>new_dist:
-                        min_dist=new_dist
-                        min_par=partition1
-        kmeans_centroids,kmeans_code = kmeans2(self.data,2,iter=20000)
-        kmeans_dist = numpy.sum(vq(self.data,kmeans_centroids)[1])
-        kmeans_dist /= self.dimY
-        print "for two clusters: OURS:%.2f, SCIPY:%.2f " %(min_dist,
-                                                           kmeans_dist)
+                        min_dist = new_dist
+                        min_par = partition1
+        m_file = self.m_file + str(pid)
+        with open(m_file,'w') as f:
+            pickle.dump(min_dist, f)
+            pickle.dump(min_par, f)
+
+
         nombre_fichero = self.nombre+str(pid)
         with open(nombre_fichero,'w') as f:
             pickle.dump(all_p1,f)
@@ -358,10 +374,12 @@ class dataset:
         length = len(several_states)
         proc = self.processes
         p_list = []
+        pid = 0
         for state in several_states:
             p_list.append(Process(
                 target = self.reverse_search,
-                args = (state, k, min_dist)))
+                args = (state, k, min_dist, pid)))
+            pid += 1
         for i in xrange(length/proc):
             temp, p_list = p_list[:proc], p_list[proc:]
             [p.start() for p in temp]
@@ -474,11 +492,12 @@ class dataset:
                     result.append(tuple(t1))
 
 
-    def reverse_search(self, point, k, minimum):
+    def reverse_search(self, point, k, minimum, pid):
         do = True
         v = point
         Adja = self.Adj(v, k)
         min_dist = min ( minimum, self.inter_cluster(v))
+        min_par = []
         while do :
             b_while = True
             while b_while:
@@ -487,8 +506,11 @@ class dataset:
                     if self.f(Next) == v:
                         v = Next
                         Adja = self.Adj(v, k)
-                        min_dist = min ( min_dist,
-                                         self.inter_cluster(v))
+                        dist = self.inter_cluster(v)
+                        if dist < min_dist:
+                            min_dist = dist
+                            min_par = tuple(tuple(temp)
+                                       for temp in v)
                 except StopIteration:
                     b_while = False
             if point == v:
@@ -504,13 +526,10 @@ class dataset:
                 while different:
                     different = u != Adja.next()
 
-        kmeans_centroids,kmeans_dist = kmeans(self.data, k,
-                                              iter=1000)
-        #print "scipy,", kmeans_dist
-        kmeans_dist = numpy.sum(vq(self.data,kmeans_centroids)[1])
-        kmeans_dist /= self.dimY
-        print "for %d clusters: OURS:%.2f, SCIPY:%.2f " %(k, min_dist,
-                                                           kmeans_dist)
+        m_file = self.m_file + str(pid)
+        with open(m_file,'w') as f:
+            pickle.dump(min_dist, f)
+            pickle.dump(min_par, f)
 
 
 def testMode():
@@ -534,10 +553,10 @@ def testMode():
                 print "    Find K takes",findktime-opttime
 
 if __name__=='__main__':
-    dppoint=2
-    points=10
+    dppoint = 2
+    points = 10
     filen="linux.txt"
-    nproc=12
+    nproc = 4
     k=2
     d_s = 'Calculate the optimum k-means centroids for a given dataset'
     parser = ArgumentParser(description=d_s)
@@ -552,7 +571,7 @@ if __name__=='__main__':
                         required=False)
     parser.add_argument('-p','--procs',
                         help='number of processes to be used,\
-    12 are used by default', required=False)
+    4 are used by default', required=False)
     parser.add_argument('-k','--clusters',
                         help='number of clusters,\
     2 are used by default', required=False)
@@ -580,6 +599,35 @@ if __name__=='__main__':
         d=dataset(dppoint,points,filen,processes = nproc)
     t1=time.time()
     d.find_optimum_two_launch()
-    if k>2:
+    min_dist = numpy.infty
+    min_par = []
+    if k > 2:
         d.cluster_k_launch(k)
         d.find_general_optimum_launch(k)
+        # we search the minimum now
+    for directory, subdir, files in os.walk(d.directory):
+        fil_min = [os.path.join(d.directory,name) for name in files
+                   if d.m_file in os.path.join(d.directory,name)]
+    for m_file in fil_min:
+        with open(m_file) as f:
+            dist = pickle.load(f)
+            par = pickle.load(f)
+            if dist < min_dist:
+                min_dist = dist
+                min_par  = par
+    kmeans_centroids,kmeans_code = kmeans2(d.data,k,iter=20000)
+    kmeans_dist = numpy.sum(vq(d.data,kmeans_centroids)[1])
+    kmeans_dist /= d.dimY
+    list_par = []
+    if k > 2:
+        for i in izip(*min_par):
+            list_par.append( i.index(1))
+    print MESSAGE %(k, min_dist, kmeans_dist)
+    with open(d.m_file[:-1],'w') as f:
+        f.write(str(min_dist))
+        f.write('\n')
+        f.write(str(list(list_par)))
+    with open(d.i_file[:-1],'w') as f:
+        f.write(str(kmeans_dist))
+        f.write('\n')
+        f.write(str(list(kmeans_code)))
