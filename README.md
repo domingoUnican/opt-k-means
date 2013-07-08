@@ -4,7 +4,16 @@ opt-k-means
 This code finds all possible k-clusters, which are convex, and select
 the minimum one with minimal inter cluster function   
 
-NEWS
+NEWS (0.0.2)
+===========
+- There is a new file called not-so-opt.py, containing a completely
+  implementation in python. That is, runing this program works the same
+  but it does not contain any reference to .so.
+- The implementation of Kmeans in Scipy is not the one in Scipy. The 
+  initialization of the centroids is done as described in the kmeans++
+  algorithm.
+
+NEWS (0.0.1)
 ===========
 - The program prints only once the inter cluster measure of the
   optimum solution with the inter cluster measure found by k-means
