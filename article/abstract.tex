@@ -1,0 +1,38 @@
+\documentclass{article}
+\title{Global Optimality in $k$-means Clustering and Discretization}
+\author{Domingo G\'omez \and Jos\'e L Balc\'azar 
+\and Jos\'e L Monta\~na \and Cristina T\^\i{}rn\u{a}uc\u{a}}
+\begin{document}
+\maketitle
+ Partition-based clustering is defined as the task of partitioning 
+the data in several disjoint subsets or clusters such that
+each cluster is as homogeneous as possible. The property of being 
+homogeneous is measured using the distance of a point to the average
+of the points belonging to the same cluster.
+The most popular clustering algorithm in practice is, most likely,
+Lloyd's heuristic approximation algorithm to the $k$-means optimum
+centroids. Instead, we study here the problem of finding the globally
+optimum set of centroids, a problem known to be NP-hard. Existing
+literature contains an algorithm that is stated to obtain this
+optimum in the ``fixed-parameter tractability'' setting. If the 
+number of clusters and the dimension of the points is fixed, 
+then this algorithm runs in polynomial time depending only on the
+number of points. Unfortunately, the published validations are 
+incomplete, and we have not found any software implementation of this algorithm.
+Our contribution is that we provide validations, and refine the 
+analysis to show better bounds; we identify alternative algorithms 
+that turn out to be
+better for relevant particular cases; and we study variants in
+terms of parallelisation and randomisation. Whereas these 
+algorithms may often be too slow to be of widespread application 
+in data mining practice, they will allow us to identify absolutely 
+optimum solutions for benchmark problems, whereby alternative heuristic 
+proposals can evaluate the goodness of their solutions and the
+precise price paid for their faster running times. In order to 
+show this, we conduct some test using well known datasets.
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

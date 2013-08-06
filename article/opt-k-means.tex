@@ -1,0 +1,1247 @@
+% version svn 488 (last version before the big changes)
+%last revision
+\documentclass[runningheads,a4paper]{llncs}
+\usepackage{algorithm}
+\usepackage{multicol}
+\usepackage{algorithmic}
+\usepackage{amssymb,amsmath}
+\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage[latin1]{inputenc}
+\usepackage{mathrsfs}
+% \usepackage[linesnumbered,boxed]{algorithm2e}
+%\usepackage{algorithm2e}
+
+\usepackage{url}
+\urldef{\mailsa}\path|{gomezd,cristina.tirnauca,montanjl,emilio.castillo}@unican.es|
+\urldef{\mailsb}\path|jose.luis.balcazar@upc.edu|
+%\newcommand{\keywords}[1]{\par\addvspace\baselineskip
+%\noindent\keywordname\enspace\ignorespaces#1}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\cP}{\mathcal{P}}
+\newcommand{\cO}{\mathcal{O}}
+\newtheorem{lem}{Lemma}
+\newtheorem{prop}{Proposition}
+\renewcommand{\S}{S} %Set of points
+\renewcommand{\H}{H} %Algebraic variety
+\newcommand{\cH}{\mathcal{H}} % Set of algebraic varieties
+\newcommand{\numH}{l}%number of algebraic varieties
+% d is the dimension of the space
+\newcommand{\dimension}{d}
+% gdim represents the dimension of a general space, this is use to
+% present the general theory. \dimension is only use to represent the
+% dimension of the observations/points in \S.
+\newcommand{\gdim}{m}
+% k is the number of clusters
+\renewcommand{\k}{k}
+% m is the number of variables in the new space and the number of
+% variables in a polynomials ring. This has to coincides with the
+% dimension of the general dimension.
+\newcommand{\m}{\gdim}
+% P represents polynomials
+\newcommand{\polynomial}{P}
+% c are the coefficients of a polynomial
+\newcommand{\numpoints}{n}
+% n is the number of points of \S
+\newcommand{\coeff}{c}
+\newcommand{\variable}{\alpha}
+\newcommand{\sv}[2]{\textit{sv}(#1)_{#2}}
+\newcommand{\sg}[1]{\textit{sign}(#1)}
+% this is the sign vector. 
+% \alpha will be the objective, the vector with all centroids
+\newcommand{\la}{\left\langle}
+\newcommand{\ra}{\right\rangle}
+\renewcommand{\(}{\left (}
+\renewcommand{\)}{\right )}
+\newcommand{\comm}[1]{\marginpar{%
+    \vskip-\baselineskip %raise the marginpar a bit
+    \raggedright\footnotesize
+    \itshape\hrule\smallskip#1\par\smallskip\hrule}}
+\begin{document}
+
+\mainmatter  
+
+
+\title{Global Optimality in $\k$-means Clustering and Discretization
+\thanks{This work has been partially supported by projects FORMALISM (TIN2007-66523) and BASMATI (TIN2011-27479-C04)
+of Programa Nacional de Investigaci\'on, Ministerio de Ciencia e Innovaci\'on (MICINN),  
+Spain, and by the Pascal-2 Network of the European Union.}}
+
+
+\titlerunning{Global Optimality in $k$-means Clustering and Discretization}
+
+
+
+
+\author{Domingo G\'omez \and Cristina T\^\i{}rn\u{a}uc\u{a} \and Jos\'e L Balc\'azar \and Jos\'e L Monta\~na \and Emilio Castillo Villar}
+
+\authorrunning{Domingo G\'omez et al.}
+
+
+\institute{
+Departamento de Matem\'aticas, Estad\'\i{}stica y Computaci\'on\\
+Universidad de Cantabria\\
+Santander, Spain\\
+\mailsa\\
+Departament de Llenguatges i Sistemes Inform\`atics\\
+Universitat Polit\`{e}cnica de Catalunya\\
+Barcelona, Spain\\ 
+\mailsb\\
+}
+
+
+\toctitle{Global Optimality in $k$-means Clustering and Discretization}
+\tocauthor{Domingo G\'omez, Cristina T\^\i{}rn\u{a}uc\u{a}, Jos\'e L Balc\'azar, Jos\'e L Monta\~na and Emilio Castillo Villar}
+\maketitle
+
+
+
+\begin{abstract}
+The most popular clustering algorithm in practice is, most likely,
+Lloyd's heuristic approximation algorithm to the $\k$-means optimum
+centroids. Instead, we study here the problem of finding the globally
+optimum set of centroids, a problem known to be NP-hard. Existing
+literature contains an algorithm that is stated to obtain this
+optimum in the ``fixed-parameter tractability'' setting; the
+published validations are incomplete, and we have not found any
+reference to this algorithm having been actually implemented.
+We provide validations, and refine the analysis to show better
+bounds; we identify alternative algorithms that turn out to be
+better for relevant particular cases; and we study variants in
+terms of parallelization and randomization. Whereas these 
+algorithms may often be too slow to be of widespread application 
+in data mining practice, they will allow us to identify absolutely 
+optimum solutions for benchmark problems, whereby alternative
+heuristic proposals can evaluate the goodness of their solutions and
+the precise price paid for their faster running times.
+\end{abstract}
+
+\section{Introduction}
+
+Assume we are given a dataset $\S$ containing $\numpoints$ observations,
+for a fixed dimensionality $\dimension$. Assume also that an integer 
+value~$\k$ is given. We consider the problem that we will call 
+``$\k$-means globally optimum clustering'': find $\k$ centroids 
+$\vec{q}_1,\ldots,\ \vec{q}_k$ that minimize the squared error
+committed by replacing each point $\vec{p}_i$ by its closest centroid. 
+
+
+An equivalent way of stating the problem is the following: $\S$ is to
+be partitioned into $\k$ disjoint subsets $\S_j$ called \emph{clusters}, 
+in such a way that the following expression is minimized:
+
+
+\begin{equation*}
+ f_{\S_1,\ldots,\S_k}(S)=\sum_{j=1}^\k \sum_{\vec{p} \in S_j}
+ \norm{\vec{p}-\vec{q}_j}^2,\quad\text{where }
+\vec{q}_j = \frac{\sum_{\vec{p} \in S_j} \vec{p}}{|\S_j|}.
+\end{equation*}
+
+
+The algorithm usually known as \emph{$\k$-means}, which was first used 
+in~\cite{MacQ67} and has became the standard name in practice (for
+instance, in many Data Mining software tools),  is also called
+%sometimes, more precisely, 
+\emph{Lloyd's heuristic}~\cite{Lloy82}. 
+Lloyd's ubiquitous heuristic consists of selecting $k$ initial centroids $\vec{q}_1,\ldots,\vec{q}_k$
+according to some criterion (for example, randomly),
+constructing $\S_j$ as the set of points $\vec{p}$ that are closer to 
+$\vec{q}_j$ than to any other centroid (ties can be broken arbitrarily), recomputing the centroids as
+mass centers of the current $\S_j$, and iterating until stability of
+the clusters. Interesting studies of the goodness of its solution,
+mostly in terms of the initialization criterion,
+are~\cite{arthurVas07,ZhangXia09}. 
+%\cite{ORSS06}.
+
+This is a very popular algorithm: often, we have far more 
+observations than a human user can look at and make sense of.
+``Abstracting'' them out into a handful of ``representative'' centroids,
+maybe with an indication of the cardinalities of the clusterings,
+is a way of understanding a bit of the inherent structure of the
+dataset. Note that, for this process to actually make sense, we 
+wish a smallish $\k$; however, little is known about how to select it
+(see~\cite{PelegXmeans} for one successful approach).
+
+Most of the practical implementations of $\k$-means offer
+no indication of the quality of the locally optimal solution found.
+How difficult is it to come up with the actual global solution which 
+minimizes to optimality
+the expression above? A simple approach working on partial clusterings
+of part of the data points, where single points are added sequentially,
+allows for application of A* schemes but leads to algorithms that run
+in exponential time on the number of points and require exponential space. 
+It is known that the problem is
+NP-hard, see~\cite{aloise09,drineas04}. 
+Even restricting  $\k=2$ (see~\cite{dasguta}) or $\dimension=2$
+(see~\cite{Mahajan}) are NP-hard problems.
+
+
+However, an interesting alternative was proposed in \cite{InKaIm94}: 
+plainly enumerating \emph{all}\footnote{the algorithm does not actually enumerate ALL of them, but it does enumerate many of them, and most importantly, the optimal clustering is proven to be there} possible clusterings, evaluating them, and keeping
+the best seen so far is possible in time $\cO(n^{\dimension\k+1})$, that is,
+the problem falls in the area known as ``fixed-parameter tractability''
+\cite{DowFel99}, whereby exponentially difficult problems are
+reduced to polynomial upon fixing specific parameters (in our case,
+dimension and number of clusters). Admittedly, the polynomial time
+algorithms might need, for cases of interest, high degree.
+
+A related problem is that of discretization. There, we consider each
+attribute (or: coordinate) of the points in the dataset separately,
+by projection on each axis. Then, we wish to divide the projected
+points into a small number of intervals. Here, the usage is, often,
+as preprocessing towards the usage of another modeling tool which 
+works on categorical attributes instead of float-valued ones.
+For instance, even though Gaussian-based variants of the 
+Na\"\i{}ve Bayes predictor work on floats, it has been argued
+\cite{YanWeb01} that better results are obtained if discretization
+is applied instead and the predictor is used on the intervals,
+considered as categorical attributes. The usual discretization
+methods include fixed-width bins, balanced cardinality bins, 
+entropy minimization~\cite{FayIra93}, fixed $\k$-intervals, 
+or proportional $\k$-intervals~\cite{YanWeb01}. However, it is 
+natural to consider $\k$-means-based intervals as a candidate method 
+to choose the bins, except that the dependence of the heuristic
+on the initial choice leads to different discretizations for
+different runs, which may seem odd. The obvious, but admittedly
+expensive, solution we study here is to choose the uniquely
+defined globally optimum $\k$-means discretization. The interest
+of this problem is that, since, in this case, $\dimension=1$, if we
+accept a limited number of discretization intervals (which is useful
+anyhow in practice, for interpretability's sake) we may end up 
+having polynomial time algorithms of low degree that could find
+globally optimum $\k$-means solutions in affordable running times.
+
+
+\section{Preliminaries}\label{sec:preliminaries}
+Let us first present the approach
+in~\cite{InKaIm94}. 
+Keep in mind that our objective is to find \emph{all} possible partitions $\S_1,\ldots,\S_k$ of $\S$, and select the one that minimizes the squared error $f_{\S_1,\ldots,\S_k}(S)$.
+
+But instead of finding all partitions of $\S$ into $\k$ clusters, we will be searching for    
+sets of $k$ centroids, $\{\vec{q}_1,\ldots,\vec{q}_k\}$ in $\R^{\dimension}$, and we will define a unique way of associating a partition to a given set of centroids. More precisely, given $\S=\{\vec{p}_1,\ldots,\vec{p}_{\numpoints}\}$, we say that $\S_1,\ldots,\S_k$ is \emph{the Voronoi partition defined by} $\vec{q}=(\vec{q}_1,\ldots,\vec{q}_k) \in \R^{dk}$ if : 
+
+$\S_1=\{\vec{p} \in \S \mid \|\vec{p}-\vec{q}_1\|^2\le   \|\vec{p}-\vec{q}_j\|^2,   \forall j \in \{2,\ldots, k\}\}$
+
+$\S_2=\{\vec{p} \in \S \mid \|\vec{p}-\vec{q}_2\|^2\le   \|\vec{p}-\vec{q}_j\|^2,   \forall j \in \{3,\ldots, k\}, \|\vec{p}-\vec{q}_2\|^2 <   \|\vec{p}-\vec{q}_1\|^2\}$
+
+$\vdots$
+
+$\S_i=\{\vec{p} \in \S \mid \|\vec{p}-\vec{q}_i\|^2\le   \|\vec{p}-\vec{q}_j\|^2,   \forall j \in \{i+1,\ldots, k\}, \|\vec{p}-\vec{q}_i\|^2 <   \|\vec{p}-\vec{q}_j\|^2, \forall j \in \{1,\ldots,i-1\}\}$
+
+$\vdots$
+
+$\S_k=\{\vec{p} \in \S \mid \|\vec{p}-\vec{q}_k\|^2 <   \|\vec{p}-\vec{q}_j\|^2, \forall j \in \{1,\ldots,k-1\}\}$.
+
+Note that there may be cases in which a point $\vec{p}$ has at least two centroids $\vec{q}_i$ and $\vec{q}_j$ at equally minimum distance. Including it in either $\S_i$ or $\S_j$ (but not in both!) would make no difference (the sum of squared errors is the same for both cases), but, for algorithmic purposes, we need to have a fixed way of placing it (we choose to include it in the partition set of smaller index).
+
+It is easy to check that 
+$ \|\vec{p}-\vec{q}_i\|^2\le   \|\vec{p}-\vec{q}_j\|^2 $ is equivalent to 
+$\|\vec{q}_i\|^2-\|\vec{q}_j\|^2 - 2\vec{p}\cdot\(\vec{q}_i-\vec{q}_j\)\le 0$,
+where $\cdot$ denotes the standard dot product. 
+Therefore, if $\mathbf{P}=(\polynomial_{\vec{p}(ij)})_{\vec{p} \in \S,1\le i<j\le\k}$ is a family of polynomials in $\R[X_1,\ldots,X_{dk}]$ defined by 
+\begin{equation}
+\label{eq:polynomials}
+\polynomial_{\vec{p}(ij)}=
+\sum_{r=1}^{\dimension}\(X_{r+(i-1)\dimension }^2-X_{r+(j-1)\dimension}^2\)
+-2\sum_{r=1}^{\dimension}p_r(X_{r+(i-1)\dimension }-X_{r+(j-1)\dimension }),
+\end{equation}
+where $\vec{p}=(p_1,\ldots, p_\dimension)$, then $\vec{p} \in \S_i$ if and only if it holds that for all $j>i$, $\polynomial_{\vec{p}(ij)}(\vec{q}) \le 0$ and for all $j<i$, $\polynomial_{\vec{p}(ji)}(\vec{q}) > 0$. 
+
+Therefore, given a point $\vec{q}$ in $\R^{dk}$, in order to see which is the Voronoi partition it defines, it is enough to check the sign of a family of $l$ polynomials, where $l=\frac{nk(k-1)}{2}$. Of course, going from \emph{enumerating all possible partitions} (admittedly many, yet countable) to \emph{enumerating all possible points in $\R^{dk}$} (not countable) does not seem much of an improvement. Moreover, it is not clear that this way we obtain \emph{all} partitions. Actually, we do not obtain all of them, but as we shall later see, we do obtain the optimal one.
+
+On the other hand, we do not need to enumerate all points in $\R^{dk}$. Indeed, given $\mathbf{P}$, we can define an equivalence relation $\equiv_{\mathbf{P}}$ on $\R^{dk}$ as follows: $\vec{q} \equiv_{\mathbf{P}} \vec{q}'$ if and only if $P(\vec{q})$ and $P(\vec{q}')$ have the same sign for all $P$ in $\mathbf{P}$. Then our problem reduces to \emph{enumerating all possible equivalence classes} (again, a big yet countable number).
+And for that we can use existing standard techniques, which we describe above.
+
+\subsection{Cell Arrangements}
+\label{sec:Arrangements}
+For a fixed polynomial $\polynomial$ in $\R[X_1,\ldots, X_\m]$, 
+the subset $\H=\{\vec{x} \in \R^{\m} \mid \polynomial(\vec{x})=0\}$ 
+of $\R^\m$ is called a \emph{real algebraic variety}.  
+Each point $\vec{p}\in\R^{\m}$
+belongs to either $\H$, 
+$\H^+=\{\vec{x} \in \R^{\m} \mid \polynomial(\vec{x}) > 0\}$ or
+$\H^-=\{\vec{x} \in \R^{m} \mid \polynomial(\vec{x})< 0\}$.  
+
+Note that $\H$ divides $\R^{\m}$ into two components, $\H^+$ and $\H^-$. Each of these sets can further be subdivided by a different algebraic variety, say $\H'=\{x \in \R^{\m} \mid \polynomial' (x)=0\}$, for some $\polynomial'$ in $\R[X_1,\ldots, X_\m]$. 
+
+More generally, a set of algebraic varieties $\cH=\{\H_1,\ldots,\H_{\numH}\}$ in
+$\R^{\m}$  partitions the space
+ into separate pieces called \emph{cells}, each of which
+is a connected region in $\R^\m$.  This partition is called a
+\emph{cell arrangement}. It is easy to see that there is a one-to-one correspondence between these cells and the equivalence classes previously defined. 
+
+
+Furthermore, we define a function $\textit{sv}:\R^\m \rightarrow \{-1,0,+1\}^l$ such that for any point   $\vec{p} \in \R^\m$, $\sv{\vec{p}}{}$ is an $\numH$-dimensional vector, called the \emph{sign vector}, with the property that its $i$-th component is given by
+\begin{equation*}
+  \sv{\vec{p}}{i} = 
+  \begin{cases}
+    +1 & \mbox{ if $\vec{p} \in \H_i^+$},\\
+    -1 & \mbox{ if $\vec{p} \in \H_i^-$},\\
+    0 & \mbox{ if $\vec{p} \in \H_i$}.
+  \end{cases}
+\end{equation*}
+
+Obviously, all points in a cell arrangement (or equivalently, all points in the same equivalence class) have the same sign vector. Going back to our problem, given a cell arrangement $\cH=\{\H_1,\ldots,\H_{\numH}\}$, we are interested in enumerating all possible sign vectors. We say that an $l$-dimensional vector $\vec{e}$ in $\{-1,0,+1\}^{\numH}$ 
+is \emph{feasible} with respect to $\cH$ if $\vec{e} \in \sv{\R^\m}{}$. Moreover, if we denote by $V_{CELL}(\cH)$ the set of all feasible vectors, then a trivial upper bound for the cardinality of $V_{CELL}(\cH)$ is $3^l$. If $l>m$ and all the polynomials in $\mathcal{P}$ have degree at most $deg$, the cardinality of $V_{CELL}(\cH)$ is $l^m\mathcal{O}(deg/m)^m$ (see Corollary 2 on page 12 of \cite{Basu98}). Moreover, if $deg=1$, $|V_{CELL}(\cH)|$ is at most  $\sum_{i=0}^{\m}\binom{\numH}{\m-i}$ (see \cite[p. 8]{Edelsbrunner87} for details).
+
+
+%We cite here a sharper
+%bound for the general case (the proof can be found
+%in~\cite{Basu98}), and another one  
+%\begin{theorem}[\cite{Basu98,Edelsbrunner87}]
+%\label{thm:NumberCells}
+%
+%
+%Let $\mathcal{P}=\{\polynomial_1,\ldots,\polynomial_{\numH}\}$ be a set of polynomials in $\R^\m$ each of degree at most 2. There is an algorithm which outputs at least one point in each cell (semi-algebraically connected component) of every non-empty sign condition on 
+%$\polynomial_1,\ldots,\polynomial_{\numH}$ and provides the sign vector of $\mathcal{P}$ at each output point $x$.
+%
+%The algorithm terminates after at most arithmetic operations in $\R$.
+%
+%  Given an arrangement of $\numH$ algebraic varieties in  ($\numH>\m$) given
+%  by polynomials ,
+%  respectively, then 
+%  
+%   \begin{equation*}
+%    |V_{CELL}(\cH)|=\mathcal{O}\left( \numH^\m\right),
+%  \end{equation*}
+%  where the implied constants only depend on $m$ and the maximum of
+%  the degrees of the polynomials
+%  $\polynomial_1,\ldots,\polynomial_{\numH}$.  
+%  If all the algebraic varieties are hyperplanes, then the
+%  following inequality holds:
+%  \begin{equation*}
+%    |V_{CELL}(\cH)| \le \sum_{i=0}^{\m}\binom{\numH}{\m-i}.
+%  \end{equation*}
+%
+%\end{theorem} 
+
+
+\subsection{Cell Enumeration}\label{sec:Enumeration}
+%Now, we present a first technique that generates all the vectors in $V_{CELL}(\cH)$ (see \cite{Basu98} for details).
+Let $\polynomial_1,\ldots, \polynomial_l$ be
+multivariate polynomials  and let
+\begin{equation*}
+  \cH=\{\H_1,\ldots,\H_{\numH}\},\quad \H_i=\{\vec{x}\in\R^{m}\ \mid\ 
+  \polynomial_i(\vec{x})=0\}.
+\end{equation*}
+
+We are going to focus on the case in which $l>m$, since if $l \leq m$, one may have, in the worst case, $3^l$ feasible sign vectors (consider $P_1,\ldots,P_l$ in $\R[X_1,\ldots,X_m]$ defined by $P_i=X_i$), so outputting all vectors in $\{-1,0,1\}^l$ might be necessary.
+
+
+The following result appears in a slightly modified form in \cite{Basu98}. Nevertheless, we choose to include an alternative proof for this particular formulation.
+
+\begin{prop}[\cite{Basu98}]
+Let $(e_1,\ldots,e_l)$ be a vector in $\{-1,-0,1\}$ and $\mathcal{P}=\polynomial_1,\ldots,\polynomial_l$ a family of polynomials in $\R[X_1,\ldots,X_m]$. Consider the following system of equations:
+
+\begin{equation}\label{eq:1}
+  \left\{  \begin{split}
+      &\sg{\polynomial_1}=e_1,\\
+      &\sg{\polynomial_2}=e_2,\\
+      &\ldots\\
+      &\sg{\polynomial_l}=e_l,\\      
+    \end{split}
+   \right.
+  \end{equation}
+Let $V$ be a non-empty connected component of solutions of \eqref{eq:1}. Then, for sufficiently small $\varepsilon>0$, there exists $I \subseteq \{1,\ldots,l\}$ such that \eqref{eq:2} has solutions  and at least one connected component of solutions of \eqref{eq:2} is included in $V$.
+
+\begin{equation}\label{eq:2}
+\polynomial_{i}=e_{i}\varepsilon,\forall i \in I
+\end{equation} 
+\end{prop}
+
+\begin{proof}
+Let $V_0$ be a non-empty connected component of solutions of \eqref{eq:1}. We show that there exists a non-empty connected component of solutions of \eqref{eq:2} included in $V_0$ for some $I \subseteq \{1,\ldots,l\}$.
+
+For that, assume without loss of generality that $e_1=e_2=\ldots=e_s=0$  and $e_{s+1}=\ldots=e_{l}=1$ for some $s \in \{0,\ldots l\}$. System \eqref{eq:1} can therefore be written equivalently:
+\begin{equation}\label{eq:3}
+  \left\{  \begin{split}
+      &\polynomial_1=0,\\
+      &\ldots\\
+      &\polynomial_s=0,\\
+      &\polynomial_{s+1}>0,\\
+      &\ldots\\
+      &\polynomial_l>0,\\      
+    \end{split}
+   \right.
+  \end{equation}
+Consider now the following system of equations
+\begin{equation}\label{eq:4}
+  \left\{  \begin{split}
+      &\polynomial_1=0,\\
+      &\ldots\\
+      &\polynomial_s=0,\\     
+    \end{split}
+   \right.
+  \end{equation}
+Clearly, there exists $W_0$ a non-empty connected component of solutions of \eqref{eq:4} such that $W_0 \supseteq V_0$. If $W_0 = V_0$ then we are done, since we can take $I=\{1,\ldots,s\}$.
+
+Otherwise, let $x_1 \in W_0 \backslash V_0$ and take $x_0 \in V_0$ arbitrary. Moreover, consider a path function $f:[0,1] \rightarrow \R^m$ in $W_0$ such that $f(0)=x_0$ and $f(1)=x_1$. Also, let $t\in [0,1]$ be minimal such that $f(t) \notin V_0$. We show that there exists $i_1 \in \{s+1,\ldots,l\}$ such that $P_{i_1}(f(t))=0$. 
+
+Assume by contradiction that for all $i \in \{s+1,\ldots,l\}$ we have $P_{i}(f(t)) \neq 0$. Obviously, it cannot be the case that $P_{i}(f(t)) > 0$ for all $i \in \{s+1,\ldots,l\}$ since we chose $t$ with $f(t) \in W_0 \backslash V_0$. So, let $J \subseteq \{s+1,\ldots,l\}$ ($|J|>0$) such that $P_{i}(f(t)) < 0$ for all $i \in J$ and $P_{i}(f(t)) > 0$ for all $i \in \{s+1,\ldots,l\} \backslash J$. Because path functions and polynomials are continuous functions, there exists $\Delta>0$ such that $P_{i}(f(t-\Delta)) < 0$ for all $i \in J$ and $P_{i}(f(t-\Delta)) > 0$ for all $i \in \{s+1,\ldots,l\} \backslash J$. Therefore, $f(t-\Delta) \in W_0 \backslash V_0$, which is a contradiction with the minimality of $t$. 
+
+Thus, there exists  $i_1 \in \{s+1,\ldots,l\}$ such that $P_{i_1}(f(t)) = 0$. Since both $P_{i_1}$ and $f$ are continuous functions and $P_{i_1}(f(t'))> 0$ for all $t' \in [0,t)$, it must exist $t_0 \in [0,t)$ such that $P_{i_1}(f(t_0)) = \varepsilon$ for sufficiently small $\varepsilon$. Note that $f(t_0) \in V_0$ because of the minimality of $t$.
+
+Now, consider the following two system of inequalities, and let $V_1$ be a connected component of solutions of \eqref{eq:5} that contains $f(t_0)$  and $W_1$ a connected component of solutions of \eqref{eq:6} that contains $f(t_0)$.
+
+% first column
+\begin{minipage}[t]{0.5\textwidth}
+\begin{equation}\label{eq:5}
+   \left\{ 
+   \begin{split}
+      &\polynomial_1=0,\\
+      &\ldots\\
+      &\polynomial_s=0, \\   
+      &\polynomial_{i_1}=\varepsilon,\\     
+      &\polynomial_{i}>0, \forall i \in \{s+1,\ldots,l\}\backslash \{i_1\},\\       
+    \end{split}
+    \right.
+\end{equation}
+\end{minipage}
+\begin{minipage}[t]{0.5\textwidth}
+\begin{equation}\label{eq:6}
+   \left\{ 
+   \begin{split}
+      &\polynomial_1=0,\\
+      &\ldots\\
+      &\polynomial_s=0, \\   
+      &\polynomial_{i_1}=\varepsilon,\\        
+      &\\ 
+    \end{split}
+    \right.
+\end{equation}\end{minipage}
+
+
+
+
+It is easy to see that $V_0 \supseteq V_1$ and $W_0 \supseteq W_1 \supseteq V_1$. 
+We can repeat the same type of reasoning until we find $W_i=V_i$ for some $i \in \{0,\ldots,l-s\}$.
+\qed
+\end{proof}
+
+Therefore, in order to enumerate all feasible sign vectors, it is enough to find a point in each connected component of all systems of at most $l$ equations of the form $\polynomial_{i}=e_{i}\varepsilon$ for $e_{i} \in \{-1,0,1\}$. Then, substitute these points in $\polynomial_1,\ldots,
+\polynomial_l$ and obtain the corresponding sign vectors. This is a huge number of systems (more precisely, $\sum_{i=1}^{\numH}3^i\binom{\numH}{i}$). Nevertheless, as we shall see, if the family of polynomials satisfies certain properties, there is no need to explore all of them. For example, if the polynomials are in general position, then one needs to check only systems of at most $m$ equations (see \cite{Basu98} for details). 
+
+
+%The idea behind this alternative algorithm is that it is enough to
+%find a point in every connected component of the algebraic sets
+%defined by a conjunction of no more than $\m$ equations
+%\begin{equation*}
+%  \polynomial_{i_1}-e_1\varepsilon=0,\ldots,
+%  \polynomial_{i_{l'}}-e_{l'}\varepsilon=0,\quad  
+%  e_1,\ldots,e_{l'}\in\{-1,0,+1\},
+%\end{equation*}
+%for small enough $\varepsilon$. Then,  substitute these points in $\polynomial_1,\ldots,
+%\polynomial_l$
+%and obtain the corresponding sign vectors, which requires $\mathcal{O}(l)$ operations. Also, we have to do it for all
+%possible sign vectors and all possible subsets of at most $m$
+%polynomials, so the final complexity is $\mathcal{O}(lf(\numH,\m))$,
+%where
+%$$f(\numH,\m)=\sum_{i=1}^{\m}3^i\binom{\numH}{i}$$
+
+
+%For each vector sign $\vec{e}=(e_1,\ldots,e_l)$ in $\{-1,0,+1\}^l$ and each $I=\{i_1,\ldots,i_{l'}\} \subseteq \{1,\ldots,l\}$ we define the
+
+
+
+
+
+%\begin{algorithm}[h]
+%\caption{Finding a Point in Every Cell Defined by a Family of Polynomials}\label{alg:cellenumeration}
+%\begin{algorithmic}[1]
+%\STATE Input: $\{P_1,\ldots,P_l\}$ polynomials in $m$ variables with $l>m$
+%\FORALL {$l'$ in $\{1,\ldots,m\}$}
+%	\FORALL {$I \subseteq \{1,\ldots,l\}$ with $|I|=l'$}
+%		\FORALL {$\vec{e} \in \{-1,0,+1\}^{l'}$}
+%		  \STATE $\vec{e}':=h_I(\vec{e})$
+%			\IF {$\exists x \in \R^\m$ such that $G'_{\vec{e'},I}(\vec{x})=0$}
+%
+%				\STATE compute and output $\sv{\vec{x}}{}$
+%			\ENDIF 
+%		\ENDFOR
+%	\ENDFOR
+%\ENDFOR
+%\end{algorithmic}
+%\end{algorithm}
+
+
+
+
+\section{Global Optimum Clustering}\label{sec:X}
+%We now have all the preliminaries to describe our algorithm for computing the optimal clustering. 
+Recall that our objective is to find $\S_1,\ldots,\S_k$ that minimizes $f_{\S_1,\ldots,\S_k}$. The main idea is to generate all possible partitions and to keep the one with the lowest squared error. But instead of plainly enumerating all partitions, we enumerate one point for each equivalence class of the quotient set  $\R^{dk}\slash_{\equiv_{\mathbf{P}}}$ (where $\mathbf{P}$ is a family of $nk(k-1)/2$ polynomials defined as in (\ref{eq:polynomials})), which in turn define Voronoi partitions.
+
+
+We have seen that enumerating the elements of $\R^{dk} \slash_{\equiv_{\mathbf{P}}}$ is equivalent to enumerating all cells in the cell arrangement defined by the following set of algebraic varieties:
+\begin{equation}
+  \label{eqH}
+  \mathcal{H}=\bigcup_{\vec{p}\in\S} \bigcup_{1\leq i < j \le \k} \H_{\vec{p}(ij)}, \textrm{ where } \H_{\vec{p}(ij)}= \{\vec{x}\in\R^{\dimension\k} \mid \polynomial_{\vec{p}(ij)}(\vec{x})=0\}
+\end{equation}
+
+Constructing the Voronoi partition defined by a point $\vec{q}$ in $\R^{dk}$ can be easily done once we know its sign vector:
+an observation $\vec{p}$ belongs to the cluster $\S_i$ 
+if and only if $\vec{q} \in  \H^{-}_{\vec{p}(ij)} \cup \H_{\vec{p}(ij)}$
+for all $j>i$ and $\vec{q} \in  \H^{+}_{\vec{p}(ji)}$ for all $j<i$. 
+
+
+Thus, if two different points $\vec{q}$ and $\vec{q}'$ in $\R^{\dimension\k}$ are in the same equivalence class with respect to $\mathbf{P}$, then they  have the same sign vector, and hence, they define the same clustering. On the other hand, the converse is not true, that is, the same clustering may correspond to non-equivalent points. Indeed, since the order in which we list the sets of each partition does not matter, we
+may end up having different sign vectors defining the same clustering simply because $\{S_1,S_2\}$ and $\{S_2,S_1\}$ represent the same clustering. But, it may also happen that two different vector signs define the same partition, in the same order (see example below). 
+
+\begin{example}
+Let $\S=\{-11,0,10\}$ be a set of three points in $\R$, and assume we want to separate them into three clusters. As we shall see, there are many vectors in $\R^3$  that lead to the same clustering although they have different sign vectors. 
+
+\noindent First, we need to define 9 polynomials (3 for each point):
+
+$\polynomial_{-11(1,2)}=X_1^2-X_2^2-2*(-11)*(X_1-X_2)$
+
+$\polynomial_{-11(1,3)}=X_1^2-X_3^2-2*(-11)*(X_1-X_3)$
+
+$\polynomial_{-11(2,3)}=X_2^2-X_3^2-2*(-11)*(X_2-X_3)$
+
+$\polynomial_{0(1,2)}=X_1^2-X_2^2-2*0*(X_1-X_2)$
+
+$\polynomial_{0(1,3)}=X_1^2-X_3^2-2*0*(X_1-X_3)$
+
+$\polynomial_{0(2,3)}=X_2^2-X_3^2-2*0*(X_2-X_3)$
+
+$\polynomial_{10(1,2)}=X_1^2-X_2^2-2*10*(X_1-X_2)$
+
+$\polynomial_{10(1,3)}=X_1^2-X_3^2-2*10*(X_1-X_3)$
+
+$\polynomial_{10(2,3)}=X_2^2-X_3^2-2*10*(X_2-X_3)$
+
+\noindent Now take $\vec{q}=(-10,0,11)$ and $\vec{q}'=(-11,0,10)$. It can be checked that 
+
+$\sv{\vec{q}\,}{}=(+1,-1,-1,+1,+1,+1,-1,-1,-1)$, 
+
+$\sv{\vec{q}'}{}=(+1,+1,-1,+1,+1,+1,-1,-1,-1)$.
+
+\noindent Nevertheless, the partition defined by both sign vectors is $\{\S_1,\S_2,\S_3\}$, where
+
+$\S_1=\{-11\}$, $\S_2=\{0\}$ and $\S_3=\{10\}$.
+
+\end{example}
+
+
+The important thing is that going through all the cells of this hyperplane arrangement, although we might not get all possible clusterings, we do get the optimal one. 
+
+
+\begin{theorem}\label{thm:Validity}
+Let $\cH$ be as in~\eqref{eqH}. There exists $\vec{q}$ in
+$\R^{dk}$ such that the Voronoi partition defined by $\vec{q}$ is
+optimal\footnote{this is already stated (without proof) in \cite{HIIK93} and \cite{InKaIm94} as being a known fact, but the references given there (\cite{BorHam89,WaWoPr88}) do not include such a result.}. 
+\end{theorem}
+
+\begin{proof}
+Let $\S=\{\S_1,\ldots, \S_k\}$ be an optimal partition. It is easy to check (by making the partial derivatives equal zero, and solving the equations) that among all possible sets of centroids, the one that minimizes the mean squared error is defined by:
+
+$$\vec{q}_i=\frac{1}{|\S_i|} \sum_{\vec{p} \in \S_i} \vec{p}$$
+
+Now let us show that the Voronoi partition $\{\S'_1,\ldots, \S'_k\}$ defined by $\sv{\vec{q}}{}$ for $\vec{q}=(q_1,\ldots,q_k)$, although it may be different from $\{\S_1,\ldots, \S_k\}$, it has the same mean squared error (thus also being an optimal partition).
+
+Assume by contrary that it does not. Take $i \in \{1,\ldots,k\}$ to be the smallest index such that $\S_i \neq \S'_i$. Let $\vec{p}$ be a point in their symmetric difference $(\S_i \backslash \S'_i) \cup (\S'_i \backslash \S_i)$. We distinguish two cases:
+
+\begin{itemize}
+\item $\vec{p} \in \S_i \backslash \S'_i$. Thus, $\exists j>i$ such that $\vec{p} \in \S'_j$, and therefore, $\norm{\vec{p} - \vec{q_j}}^2<\norm{\vec{p} - \vec{q_i}}^2$. Consider now the partition constructed from $\{\S_1,\ldots,\S_k\}$ by moving $\vec{p}$ from $\S_i$ to $\S_j$. It would have a mean squared error with respect to $\vec{q}=(\vec{q}_1,\ldots,\vec{q}_k)$ strictly smaller than the optimal one (because the contribution to the sum of $\vec{p}$ is smaller), a contradiction.
+\item $\vec{p} \in \S'_i \backslash \S_i$. Thus, $\exists j>i$ such that $\vec{p} \in \S_j$, and $\norm{\vec{p} - \vec{q_i}}^2\leq \norm{\vec{p} - \vec{q_j}}^2$. Now, if $\norm{\vec{p} - \vec{q_i}}^2 < \norm{\vec{p} - \vec{q_j}}^2$ we construct a new partition from $\{\S_1,\ldots,\S_k\}$ by moving $\vec{p}$ from $\S_j$ to $\S_i$. This new partition would have a strictly smaller mean squared error with respect to $\vec{q}=(\vec{q}_1,\ldots,\vec{q}_k)$ than the optimal one, a contradiction. We are left with the case in which $\norm{\vec{p} - \vec{q_i}}^2 =  \norm{\vec{p} - \vec{q_j}}^2$. If $\vec{p}$ was the only point that distinguished the two partitions, then both partitions would have the same minimal mean squared error with respect to $\vec{q}=(\vec{q}_1,\ldots,\vec{q}_k)$, contradicting our assumption. So there must be another point, say $\vec{p}'$, such that either:
+\begin{itemize}
+\item $\vec{p}' \in \S'_i \backslash \S_i$ and $\norm{\vec{p} - \vec{q_i}}^2 < \norm{\vec{p} - \vec{q_j}}^2$ for some $j >i$, or 
+\item $\vec{p}' \in (\S_j \backslash \S'_j) \cup (\S'_j \backslash \S_j)$ for some $j >i$.
+\end{itemize}
+Following the same type of reasoning, we can check that both cases eventually lead to a contradiction.
+\end{itemize}
+
+\end{proof}
+
+%From now and on, we will center on partitions defined by a sign
+%vector, so we will use partition to refer to a Voronoi partition.
+
+The idea that cell arrangements can be used to enumerate all Voronoi partitions appeared already in \cite{HIIK93}, where the authors claim (without proof) that ``all the Voronoi partitions can be enumerated in $\mathcal{O}(n^{dk(k+1)/2})$ time by using the hyperplane arrangement''. One year later, the same authors (three of them) argue that ``the number of Voronoi partitions is bounded by the combinatorial complexity of $nk(k-1)/2$ constant-degree algebraic surfaces'', and therefore, ``all the Voronoi partitions can be enumerated in $\mathcal{O}(n^{dk+1})$ time'' (see \cite[pp. 335]{InKaIm94}), with no further reference about which is the cell enumeration algorithm they had in mind. Clearly, it cannot be the one we presented in Section \ref{sec:Enumeration} simply because this technique was discovered five years later. We believe that the authors  referred to the following result.
+\begin{theorem}{\cite{Canny93}}
+  \label{thm:CannyEnumeration}
+  Given $\cH$ an arrangement of $\numH$ algebraic varieties in
+  $\R^{\gdim}$,  then there exist an algorithm for the cell
+  enumeration problem with time  complexity $\cO\(\numH^{\gdim+1}\)$.
+  where the implied constants only depends on $m$ and the maximum of the degrees of the varieties. 
+\end{theorem}
+
+However, the ``implied constants'' are as big as $2^{m^2}$, which makes the algorithm in \cite{Basu98} in practice much faster than the one introduced in \cite{Canny93}.
+%However, we want to notice that the implied constants hidden in the
+%$\cO$ grow much faster than  $2^{\gdim}$, 
+%see~\cite[Section 4.7]{Canny93}. 
+%More recent improvements,  like~\cite{Basu98}, also present this drawback. 
+%\comm{For algebraic varieties of
+%degree one, there are algorithms with better complexity,
+%see~\cite[Theorem 3.3]{AvisFukuda}. In the next section we show
+%how to modify the algorithm in~\cite{AvisFukuda} to our purposes.}
+We next proceed to describe the algorithm that searches for the optimum clustering. 
+%Hence, a first contribution of this paper is to show the truth of
+%that statement, showing explicit algorithms for our special
+%case. 
+
+
+
+%\begin{algorithm}[h]
+%\caption{Generating global optimum clustering}\label{alg:partitions}
+%\begin{algorithmic}[1]
+%\STATE Input: $(k,\S=\{\vec{p_1},\ldots,\vec{p}_n\})$, with $\S \subset \R^d$
+%\STATE Let $m=dk, l=nk(k-1)/2$
+%\STATE Let $\mathcal{P}=(\polynomial_{\vec{p}(ij)})_{\vec{p} \in \S,1\le i<j\le\k}$ be a family of polynomials in $\R[X_1,\ldots,X_{m}]$ as in (\ref{eq:polynomials})
+%\STATE Let $O$ be the output when running Algorithm \ref{alg:cellenumeration} on $\mathcal{P}$
+%\STATE $\min=\infty$
+%\FORALL {$(\vec{x},\sv{\vec{x}}{})$ in $O$}
+%	\STATE Let $\{S_1,\ldots,\S_k\}$ be the partition defined by $\sv{\vec{x}}{}$
+%	\IF {$f_{S_1,\ldots,\S_k}(S)<\min$}
+%		\STATE $\min=f_{S_1,\ldots,\S_k}(S)$
+%		\STATE Save $\{S_1,\ldots,\S_k\}$ as the optimal partition
+%	\ENDIF
+%\ENDFOR
+%\end{algorithmic}
+%\end{algorithm}
+%
+%
+%\begin{theorem}\label{thm:general}
+%Given $\S\subset\R^{\dimension}$ a set of cardinality $\numpoints$. Then the number of Voronoi partitions into $k$ clusters is, at most,
+%  \begin{equation*}
+%    f(l,l)=\sum_{i=1}^{l}3^i\binom{l}{i},
+%  \end{equation*}
+%  and the number of operations necessary to generate each of the partitions is of order $lm^2$ where $l=nk(k-1)/2$ and $m=dk$. 
+%\end{theorem}
+%
+%The complexity of Algorithm \ref{alg:partitions} is $\mathcal{O}(lf(l,l))$, which is as bad as $\mathcal{O}(l4^l)$ so even enumerating all possibilities would be faster. In fact, we are going to show that we can do it much better.
+
+% Although in $\mathcal{O}$ notation it makes no difference, in practice, when $l$ is big enough, using the algorithm of \cite{Basu98} instead of the one of \cite{Canny93} leads to much better  running times:
+%
+%$$\lim_{l \rightarrow \infty} \frac{l\min(3^l,f(l,m))}{2^{m^2}l^{m+1}}=\frac{3^m}{2^{m^2}}.$$
+%
+%%Indicative table for when $3^l>f(l,m))$.
+%
+%\begin{table}
+%\begin{center}
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%\multicolumn{4}{|c|}{$k=2$}\\
+%\hline
+%$d$&$m$&$n$&$l$\\
+%\hline
+%1&2&4&4\\
+%2&4&9&9\\
+%3&6&14&14\\
+%4&8&18&18\\
+%5&10&23&23\\
+%6&12&28&28\\
+%7&14&33&33\\
+%8&16&38&38\\
+%9&18&43&43\\
+%10&20&48&48\\
+%\hline
+%\end{tabular}
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%\multicolumn{4}{|c|}{$k=3$}\\
+%\hline
+%$d$&$m$&$n$&$l$\\
+%\hline
+%1&3&2&6\\
+%2&6&5&15\\
+%3&9&7&21\\
+%4&12&10&30\\
+%5&15&12&36\\
+%6&18&15&45\\
+%7&21&17&51\\
+%8&24&20&60\\
+%9&27&22&66\\
+%10&30&25&75\\
+%\hline
+%\end{tabular}
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%\multicolumn{4}{|c|}{$k=4$}\\
+%\hline
+%$d$&$m$&$n$&$l$\\
+%\hline
+%1&4&2&12\\
+%2&8&3&18\\
+%3&12&5&30\\
+%4&16&7&42\\
+%5&20&8&48\\
+%6&24&10&60\\
+%7&28&12&72\\
+%8&32&14&84\\
+%9&36&15&90\\
+%10&40&17&102\\
+%\hline
+%\end{tabular}
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%\multicolumn{4}{|c|}{$k=5$}\\
+%\hline
+%$d$&$m$&$n$&$l$\\
+%\hline
+%1&5&2&20\\
+%2&10&3&30\\
+%3&15&4&40\\
+%4&20&5&50\\
+%5&25&7&70\\
+%6&30&8&80\\
+%7&35&9&90\\
+%8&40&10&100\\
+%9&45&12&120\\
+%10&50&13&130\\
+%\hline
+%\end{tabular}
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%\multicolumn{4}{|c|}{$k=6$}\\
+%\hline
+%$d$&$m$&$n$&$l$\\
+%\hline
+%1&6&1&15\\
+%2&12&2&30\\
+%3&18&3&45\\
+%4&24&4&60\\
+%5&30&6&90\\
+%6&36&7&105\\
+%7&42&8&120\\
+%8&48&9&135\\
+%9&54&10&150\\
+%10&60&12&180\\
+%\hline
+%\end{tabular}
+%\caption{Minimal $n$ for which $3^l>f(l,m))$}
+%\label{table}
+%\end{center}
+%\end{table}
+%
+
+First, we show how Algorithm \ref{alg:partitions} can be improved for $k=2$ and then we use this result for general $k$. 
+
+\subsection{Binary Splitting ($k=2$)}
+
+Here we consider the binary splitting problem: finding the
+globally optimum way of separating the data points into two
+clusters, for arbitrary dimension. 
+
+A first improvement of the algorithm outlined in Section~\ref{sec:original}  is an algorithm that explores
+$\cO(f(\numpoints,\dimension))$ cells in order to return the optimal clustering. This improves the $\mathcal{O}(n^{2d+1})$ bound given in  \cite{InKaIm94}.
+
+The basic idea is that Algorithm \ref{alg:cellenumeration} checks tuples of $\ell'$ polynomials with $\ell'$ in $\{1,\ldots,l\}$. We show that for the particular case of $k=2$, it is enough to look only at tuples of dimension at most $\dimension+1$. 
+
+\begin{lem}
+\label{lem:number_equations_k2}
+  Given the following system of $d'>\dimension+2$ equations,
+  \begin{equation*}
+  \left\{  \begin{split}
+      &\polynomial_{\vec{p}_1(12)}=e_1\varepsilon,\\
+      &\polynomial_{\vec{p}_2(12)}=e_2\varepsilon,\\
+      &\ldots=\ldots,\\
+      &\polynomial_{\vec{p}_{\dimension'}(12)}=e_{\dimension'}\varepsilon,\\
+    \end{split}
+   \right.
+  \end{equation*}
+  where
+  \begin{itemize}
+  \item $\varepsilon$ is a infinitesimal,
+  \item $e_1,\ldots, e_{\dimension'}\in\{-1,0,+1\}$,
+  \end{itemize}
+all its solutions can be obtained using at most $\dimension+1$ equations. 
+\end{lem}
+\begin{proof}
+First, let us note that an equivalent system of equations is the following one:
+  \begin{equation*}
+   \left\{  \begin{split}
+      &\polynomial_{\vec{p}_1(12)}=e_1\varepsilon,\\
+      &\polynomial_{\vec{p}_2(12)}-\polynomial_{\vec{p}_1(12)}=(e_2-e_1)\varepsilon,\\
+      &\ldots=\ldots,\\
+      &\polynomial_{\vec{p}_{i}(12)}-\polynomial_{\vec{p}_1(12)}=(e_{i}-e_1)\varepsilon,\\
+      &\ldots=\ldots,\\
+      &\polynomial_{\vec{p}_{\dimension'}(12)}-\polynomial_{\vec{p}_1(12)}=(e_{\dimension'}-e_1)\varepsilon,\\
+    \end{split}
+   \right.
+  \end{equation*}
+
+All these equations, with the exception of the first one, are linear, since 
+
+$$\polynomial_{\vec{p}_{i}(12)}-\polynomial_{\vec{p}_1(12)}=-2\sum_{r=1}^d(p_r^{(i)}-p_r^{(1)})(X_r-X_{r+d}).$$
+
+\noindent where $\vec{p}_i=(p_1^{(i)},\ldots,p_d^{(i)})$ for all $i$ in $\{1,\ldots,\dimension+2\}$.
+
+We perform the following change of variables:
+
+$Y_r=X_r-X_{r+d}$, for all $r \in \{1,\ldots,d\}$
+
+$Z_r=X_r+X_{r+d}$, for all $r \in \{1,\ldots,d\}$.
+
+Our system of equations becomes:
+
+\begin{equation*}
+   \left\{  \begin{split}
+     & \sum_{r=1}^d Y_r(Z_r-2p_r^{(1)})=e_1\varepsilon,\\
+     & -2\sum_{r=1}^d(p_r^{(2)}-p_r^{(1)})Y_r=(e_2-e_1)\varepsilon,\\
+     & \ldots=\ldots,\\
+     & -2\sum_{r=1}^d(p_r^{(i)}-p_r^{(1)})Y_r=(e_{i}-e_1)\varepsilon,\\
+     & \ldots=\ldots,\\
+     & -2\sum_{r=1}^d(p_r^{(d')}-p_r^{(1)})Y_r=(e_{\dimension'}-e_1)\varepsilon,\\
+    \end{split}
+   \right.
+\end{equation*}
+
+In matrix notation,
+
+\begin{equation}\label{eq:system}
+   \left\{  \begin{split}
+      &\sum_{r=1}^d Y_r(Z_r-2p_r^{(1)})=e_1\varepsilon,\\
+      &A\cdot Y=b\\
+    \end{split}
+   \right. 
+\end{equation}
+
+\noindent where $Y=(Y_1,\ldots,Y_d)^T$, 
+$b=\varepsilon (e_2-e_1,\ldots,e_{d'}-e_1)^T$
+ and $A=(a_{ij})_{i,j}$ with $a_{ij}=2(p_j^{(1)}-p_j^{(i+1)})$ for all $i\in \{1,\ldots,d'-1\}$ and $j \in \{1,\ldots,d\}$.  Since the rank of $A$ is at most $d$, the system of equations $A\cdot Y=b$ either has no solutions, being inconsistent, or, if it does have one or more solutions, it must be the case that one of the equations can be written as a linear combination of other equations, and thus, it can be eliminated while maintaining an equivalent system. This concludes our proof.\qed
+\end{proof}
+
+
+This is the first refinement, the idea is instead of taking up to $l$ observations and assign them in clusters, it is only necessary to take at most $\dimension+1$ points for defining the two clusters. 
+In order to present the actual algorithm we need some further notations. Given a vector sign $\vec{e}=(e_1,\ldots,e_l)$ in $\{-1,0,+1\}^l$ and $I=\{i_1,\ldots,i_{l'}\} \subseteq \{1,\ldots,l\}$, we define the 
+following polynomial
+
+ \begin{eqnarray}
+ G'_{\vec{e},I}(X_1,\ldots, X_\m)=  \sum_{j \in I}(\polynomial_{j}(X_1,\ldots,  X_\m)-e_{j}\varepsilon)^2, 
+\end{eqnarray}
+
+
+Moreover, let $h_I:\R^{l'} \rightarrow \R^{l}$ be a function such that if $\vec{e}=(e_1,\ldots,e_{l'})$ then  
+
+$$
+h_I(\vec{e})_i = \left\{
+        \begin{array}{ll}
+            0, & \quad i \notin I \\
+            e_j, & \quad i=i_j \in I
+        \end{array}
+    \right.
+$$
+(I am sure there is a name for this kind of function... inverse projection?)
+
+The algorithm is presented below.
+
+\begin{algorithm}[h]
+\caption{A First Improvement of Algorithm \ref{alg:cellenumeration} for the case $n > 2d$}\label{alg:third}
+\begin{algorithmic}[1]
+\STATE Input: $\{P_1,\ldots,P_l\}$ polynomials in $2d$ variables defined as in (\ref{eq:polynomials})
+\FORALL {$l'$ in $\{1,\ldots,d,d+1\}$}
+	\FORALL {$I \subseteq \{1,\ldots,n\}$ with $|I|=l'$}
+		\FORALL {$\vec{e} \in \{-1,0,+1\}^{l'}$}
+		  \STATE $\vec{e}':=h_I(\vec{e})$
+			\IF {$\exists x \in \R^\m$ such that $G'_{\vec{e'},I}(\vec{x})=0$}
+				\STATE output ($\vec{x},\sv{\vec{x}}{}$)
+			\ENDIF 
+		\ENDFOR
+	\ENDFOR
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{theorem}\label{thm:firstimprovement}
+  Given $\S\subset\R^{\dimension}$ a set of cardinality
+  $\numpoints$. Then the number of Voronoi partitions into two clusters is, at
+  most,
+  \begin{equation*}
+    f(\numpoints,\dimension+1)=\sum_{i=1}^{\dimension+1}3^i\binom{\numpoints}{i},
+  \end{equation*}
+  and the number of operations necessary to generate each of the
+  partitions is of order $\dimension^2\numpoints$. 
+\end{theorem}
+
+Thus, the global optimum can be obtained performing $nf(n,d+1)$ operations.
+We present a second refinement, which can be applied whenever $l$ is much bigger than $m$.
+ 
+\begin{lem}
+\label{lem:number_equations_k3}
+Let $B=\{\vec{b}_1,\ldots,\vec{b}_d\}$ be a base in $\R^d$ and $\{\vec{p}_1,\ldots,\vec{p}_{d'}\}$ a subset of $\S$, with $1 \leq \dimension' < \dimension$, and consider the following system of $\dimension'$ equations
+  \begin{equation*}
+    \left\{ \begin{split}
+     & \polynomial_{\vec{p}_1(12)}=e_1\varepsilon,\\
+     & \polynomial_{\vec{p}_2(12)}=e_2\varepsilon,\\
+     & \ldots=\ldots,\\
+     & \polynomial_{\vec{p}_{\dimension'}(12)}=e_{\dimension'}\varepsilon,\\
+    \end{split}
+   \right.
+  \end{equation*}
+  where
+  \begin{itemize}
+  \item $\varepsilon$ is a infinitesimal,
+  \item $e_1,\ldots, e_{\dimension'}\in\{-1,0,+1\}$,
+  \end{itemize}
+If the system is consistent, then there exists a point $\vec{p}$ in $S \cup B \backslash \{\vec{p}_1,\ldots,\vec{p}_{d'}\}$ such that by adding the equation  $\polynomial_{\vec{p}(12)}=e_1\varepsilon$, the system will continue to be consistent but will have strictly higher rank. Moreover, any solution of the later system will be solution to the initial one.
+\end{lem}
+
+\begin{proof}
+Performing the same change of variables as we did in the proof of Lemma \ref{lem:number_equations_k2}, our system of equations becomes 
+
+\begin{equation*}
+ \left\{   \begin{split}
+      &\sum_{r=1}^d Y_r(Z_r-2p_r^{(1)})=e_1\varepsilon,\\
+      &A\cdot Y=b\\
+    \end{split}
+  \right.
+\end{equation*}
+
+\noindent where $Y=(Y_1,\ldots,Y_d)^T$, $b=\varepsilon (e_2-e_1,\ldots,e_{d'}-e_1)^T$ and $A=(a_{ij})_{i,j}$ with $a_{ij}=2(p_j^{(1)}-p_j^{(i+1)})$ for all $i\in \{1,\ldots,d'-1\}$ and $j \in \{1,\ldots,d\}$. It is clear that this system of equations is consistent if and only if $A\cdot Y=b$ has solutions. Note that matrix $A$ is a $(d'-1) \times d$ matrix, thus having at most rank $d'-1$. 
+
+Now, if $A\cdot Y=b$ is consistent, let $\vec{p}=(p_1,\ldots,p_d)$ in $B$ be such that $\vec{p}$ cannot be written as a linear combination of $\{\vec{p}_1,\ldots, \vec{p}_{d'}\}$ (such a point must exist since otherwise $\{\vec{p}_1,\ldots, \vec{p}_{d'}\}$ would be a base for $\R^{d}$, which is impossible given that $d'<d$). The system obtained by adding the equation $\polynomial_{\vec{p}(12)}=e_1\varepsilon$  is consistent and has strictly higher rank since $\vec{p}-\vec{p}_1$ cannot be written as linear combination of $\{\vec{p}_2-\vec{p}_1,\ldots, \vec{p}_{d'}-\vec{p}_1\}$:
+
+\begin{equation*}
+ \left\{   \begin{split}
+      &\sum_{r=1}^d Y_r(Z_r-2p_r^{(1)})=e_1\varepsilon,\\
+      &A\cdot Y=b\\
+      &\sum_{r=1}^d 2(p_r^{(1)}-p_r)Y_r=0,
+    \end{split}
+  \right.
+\end{equation*}
+
+Moreover, it is easy to see that any solution of the later system will be solution to the initial one.
+
+\qed
+\end{proof}
+
+An immediate consequence of Lemma \ref{lem:number_equations_k3} is that if we have a consistent system of at most $d-1$ equations as in (\ref{eq:system}), we can complete it with more points in $B$ until the rank of matrix $A$ is $d-1$ such that every solution of the new system is a solution of the initial one. Therefore, it is enough to check sets with at least $d$ polynomials.
+The following theorem then trivially follows from the results above.
+
+\begin{theorem}
+  \label{thm:number_lines}
+  Given $\S\subset\R^{\dimension}$ a set of cardinality
+  $\numpoints$. Then the number of Voronoi partitions into two clusters is, at most, 
+  \begin{equation*}
+    g(n,d)=3^{\dimension}{\numpoints+\dimension \choose \dimension}+3^{\dimension+1}{\numpoints \choose \dimension+1},
+  \end{equation*}
+  and the number of operations necessary to generate each of the partitions is of order $\dimension^2 n$. 
+\end{theorem}
+
+The algorithm becomes:
+
+
+\begin{algorithm}[h]
+\caption{A Second Improvement of Algorithm \ref{alg:cellenumeration} for the case $n > 2d$}\label{alg:fourth}
+\begin{algorithmic}[1]
+\STATE Input: $\{P_1,\ldots,P_l\}$ polynomials in $2d$ variables defined as in (\ref{eq:polynomials})
+\FORALL {$I \subseteq \{1,\ldots,n\}$ with $|I|=d+1$}
+		\FORALL {$\vec{e} \in \{-1,0,+1\}^{d+1}$}
+		  \STATE $\vec{e}':=h_I(\vec{e})$
+			\IF {$\exists x \in \R^\m$ such that $G'_{\vec{e'},I}(\vec{x})=0$}
+				\STATE output ($\vec{x},\sv{\vec{x}}{}$)
+			\ENDIF 
+		\ENDFOR
+\ENDFOR
+\STATE let $B$ be a base in $\R^d$
+\FORALL {$I \subseteq \{1,\ldots,n\}\cup B$ with $|I|=d$}
+		\FORALL {$\vec{e} \in \{-1,0,+1\}^{d}$}
+		  \STATE $\vec{e}':=h_I(\vec{e})$
+			\IF {$\exists x \in \R^\m$ such that $G'_{\vec{e'},I}(\vec{x})=0$}
+				\STATE output ($\vec{x},\sv{\vec{x}}{}$)
+			\ENDIF 
+		\ENDFOR
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+The global optimum can therefore be obtained by performing the following number of operations:
+$n \min{(f(n,d+1), g(n,d))}$.
+
+\subsection{Reducing $k$-clustering to 2-clustering}
+In order to explain how the $k$-clustering problem can be reduced to the 2-clustering problem we need to introduce some notation. As before, let $S=\{p_1,\ldots,p_n\}$ in $\R^d$ and let us fix $k>2$. We define a family of projection functions $pr^{ij}:\R^{dk} \rightarrow \R^{2d}$ by 
+$$pr^{ij}(x_1,\ldots,x_{dk})=(x_{(i-1)d+1},\ldots,x_{id},x_{(j-1)d+1},\ldots,x_{jd}).$$
+
+
+Let $\mathbf{P}=(\polynomial_{\vec{p}(ij)})_{\vec{p} \in \S,1\le i<j\le\k}$ be a family of $nk(k-1)/2$ polynomials in $\R[X_1,\ldots,X_{dk}]$ defined as in \eqref{eq:polynomials} and $\mathbf{P}'=(\polynomial'_{\vec{p}(ij)})_{\vec{p} \in \S,1\le i<j\le\k}$ the family of $n$ polynomials in $\R[X_1,\ldots,X_{2d}]$ defined as in \eqref{eq:polynomials} for the 2-clustering problem. 
+
+For a better readability we choose to rename the polynomials in $\mathbf{P}$ as follows.
+
+\begin{tabular}{ccccc}
+$P_1=P_{\vec{p}_1(12)}$ & $P_{n+1}=P_{\vec{p}_1(23)}$ & $P_{2n+1}=P_{\vec{p}_1(34)}$&\ldots&$P_{n(k^2-k-2)/2+1}=P_{\vec{p}_1(1k)}$\\
+$P_2=P_{\vec{p}_2(12)}$ & $P_{n+2}=P_{\vec{p}_1(23)}$ & $P_{2n+2}=P_{\vec{p}_2(34)}$&\ldots&$P_{n(k^2-k-2)/2+2}=P_{\vec{p}_2(1k)}$\\
+\vdots&&&&\\
+$P_n=P_{\vec{p}_n(12)}$ & $P_{n+n}=P_{\vec{p}_1(23)}$ & $P_{2n+n}=P_{\vec{p}_n(34)}$&\ldots&$P_{n(k^2-k-2)/2+n}=P_{\vec{p}_n(1k)}$\\
+\end{tabular}
+
+That is, $P_s=P_{\vec{p}_t(ij)}$ where $s=t+n(i-1+(j-i-1)(2k-j+1)/2)$. The same order applies to polynomials in $\mathbf{P}'$.
+
+An important observation is that given $\vec{p}$ in $S$, $P_{\vec{p}(ij)}$ only uses $2d$ of its variables, being transformable to $P'_{\vec{p}(12)}$ for all $1 \leq i<j\leq k$. More formally, 
+$P_{\vec{p}(ij)}(\vec{x})=P'_{\vec{p}(12)}(pr^{ij}(\vec{x}))$
+
+With this notation, we have the following lemma.
+
+\begin{lemma}
+If $(e_1,\ldots,e_l)$ is a feasible sign vector with respect to $\mathbf{P}$ ($l=nk(k-1)/2$), then $(e_1,\ldots,e_n),(e_{n+1},\ldots,e_{2n}),\ldots,(e_{n(k^2-k-2)/2+1},\ldots,e_{nk(k-1)/2}) $ are all feasible sign vectors with respect to $\mathbf{P'}$.
+\end{lemma}
+
+
+\begin{proof}
+Let $\vec{e}=(e_1,\ldots,e_l)$ be a feasible sign vector with respect to $\mathbf{P}$. Then there exists $\vec{x}=(x_1,\ldots,x_{kd})$ in $\R^{dk}$ such that $\sv{\vec{x}}{}=\vec{e}$. Therefore, for each $1 \leq i < j \leq k$ and $s=n(i-1+(j-i-1)(2k-j+1)/2)$ we have: 
+
+\begin{tabular}{ll}
+$(e_{s+1},\ldots,e_{s+n})$ &= $(\sg{P_{s+1}(\vec{x})},\ldots,\sg{P_{s+n}(\vec{x})})$ \\
+&= $(\sg{P_{\vec{p}_{1}(ij)}(\vec{x})},\ldots,\sg{P_{\vec{p}_{n}(ij)}(\vec{x})})$ \\
+&= $(\sg{P'_{\vec{p}_{1}(12)}(pr^{ij}(\vec{x}))},\ldots,\sg{P'_{\vec{p}_{n}(12)}}(pr^{ij}(\vec{x})))$\\
+&= $(\sg{P'_{\vec{p}_{1}(12)}(\vec{y})},\ldots,\sg{P'_{\vec{p}_{n}(12)}}(\vec{y}))$\\
+&= $\sv{\vec{y}}{}$ with respect to $\mathbf{P}'$.
+\end{tabular}
+
+where $\vec{y}=pr^{ij}(\vec{x})$. Hence, each $(e_{s+1},\ldots,e_{s+n})$ for $s$ in $\{1,\ldots,k(k-1)/2\}$\footnote{this is due to the fact that  $1\leq i <j \leq k$ covers all polynomials in $\mathbf{P}$} is a feasible vector with respect to $\mathbf{P}'$, which concludes our proof. 
+\end{proof}
+
+This lemma ensures that the following algorithm is correctly outputting at least all feasible sign vectors with respect to $\mathbf{P}$ (it may also output non feasible sign vectors, but those will not affect the solution to the $k$-clustering problem).
+
+\begin{algorithm}[h]
+\caption{A First Improvement of Algorithm \ref{alg:cellenumeration} for the case $n > 2d$}\label{alg:fifth}
+\begin{algorithmic}[1]
+\STATE Input: the family $\mathbf{P}$ of polynomials in $\R[X_1,\ldots,X_{dk}]$
+\STATE $E$ = the set of sign vectors output by Algorithm \ref{alg:third} or \ref{alg:fourth} on $\mathbf{P}'$
+\FORALL {$\vec{e} \in E^k$}
+	\STATE output $\vec{e}$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+The complexity of this algorithm is $\mathcal{O}(nh(n,d)+h(n,d)^k)$ where $h(n,d)$ = $\min{(f(n,d+1),g(n,d))}$, since by Theorem \ref{thm:firstimprovement} and Theorem \ref{thm:number_lines}, $E$ can have at most $h(n,d)$ elements.
+
+%Now, it is time for a little reflexion: we are interested in the
+%partition with the minimum intercluster, not in enumerating all the
+%possible partitions. So, if we could enumerate all the possible
+%clusters, order them using an intracluster measure and generate all
+%possible partitions by taking $\k$ different clusters.
+%
+%Instead of taking all possible $\k$ cluster, we start by taking one
+%cluster, then we calculate the
+%intracluster measure, we check if this is less than a minimum seen so
+%far. If it less, we add another cluster and repeat it until $\k$
+%clusters. The following result gives the number of different clusters
+%generated by Voronoi partitions.
+%\begin{theorem}
+%  \label{thm:number_clusters}
+%  Given $\S\subset\R^{\dimension}$ a set of cardinality
+%  $\numpoints$. Then the number of different clusters given by Voronoi
+%  partitions is, at most,
+%  \begin{equation*}
+%   2^{\k}\( 3^{\dimension-1}{\numpoints \choose \dimension}\)^{\k-1},
+%  \end{equation*}
+%  and the number of operations needed to generate each of them is 
+%  $\numpoints$.
+%\end{theorem}
+%\begin{proof}
+%  Each cluster given by a voronoi partition is a connected component
+%  and for each pair of clusters in a voronoi partition, it is possible
+%  to find a hyperplane which separates the points of the two clusters.
+%
+%  By Theorem~\ref{thm:number_lines}, there are 
+%  \begin{equation*}
+%    3^{\dimension-1}{\numpoints \choose \dimension}
+%  \end{equation*}
+%  different lines which split the points of $\S$ in different
+%  clusters.
+%
+%  $\k-1$ different lines  splits $\S$ into $2^{\k}$ sets. This
+%  finishes the proof.
+%\end{proof}
+
+\subsection{Reduced Number of Clusters ($\k\leq d$)}
+\label{sec:case_k}
+
+For the case $\k>2$, we can enunciate another bound for the number 
+of Voronoi partitions of $\S$ into $\k$ clusters. 
+%Although it could be proved using a generalized lemma 
+\begin{theorem}
+  Given $\S\subset\R^{\dimension}$ a set of cardinality
+  $\numpoints$. Then the number of partitions into $\k$ clusters is, at
+  most,
+  \begin{equation*}
+    \sum_{j=1}^{(\dimension+1)(\k-1)}{\numpoints \choose j},
+  \end{equation*}
+  and the number of operations necessary to generate each of the
+  partitions is $\cO(\numpoints)$, where the implied constant depends
+  only on $\dimension$ and $\k$. 
+\end{theorem}
+\begin{proof}
+Notice that for each $\vec{p}$ in $\S$ and $1 < i < j \leq k$,  
+$\polynomial_{\vec{p}(ij)} = \polynomial_{\vec{p}(1j)}-\polynomial_{\vec{p}(1i)}$, and each $ \polynomial_{\vec{p}(1i)}=\sum_{r=1}^d{X_r^2-X_{r+(i-1)d}^2}-\sum_{r=1}^d{2p_r(X_r-X_{r+(i-1)d})}$ can be written as 
+$\polynomial_{\vec{p}(1i)}=Z^{(i-1)}-\sum_{r=1}^d{2p_rY_r^{(i-1)}}$, where $Z^{(i-1)}=\sum_{r=1}^d{X_r^2-X_{r+(i-1)d}^2}$ and $Y_r^{(i-1)}=X_r-X_{r+(i-1)d}$ for all $i$ in $\{2,\ldots,k\}$.
+
+With this change of variables, $\polynomial_{\vec{p}(ij)}$ is linear, so we can use linear algebra techniques
+to generate all solutions in time $\cO(f(n,(d+1)(k-1))$.
+\end{proof}
+
+
+\subsection{Discretization of Numeric Attributes ($d=1$)}
+
+For $d=1$, the japos theorem gives $\mathcal{O}(n^{k+1})$ running time
+to traverse all the clusterings; our theorem is worse as $k>d$:
+it gives $\mathcal{O}(n^{2k-1})$. We show that, actually, it is possible to
+perform the task in $\mathcal{O}(n^{k-1})$ operations. Thus, finding the
+globally optimum $k$-means discretization for not too large 
+datasets and a smallish number of bins may be feasible in practice. 
+We report on actual running times of sequential and parallel 
+implementations below.
+
+Solving $k-$clustering problem can be done efficiently when $d=1$. 
+The result follows from the following lemma.
+\begin{lemma}
+\label{lem:CountingKClustering}
+  The number of Voronoi partitions of a set $S\subset\R$ of $n$ points 
+  generated by $k$ points is $O(n^{(k-1)})$, and all the Voronoi partitions
+  can be enumerated in $O(n^{(k-1)})$ where the constant depends on $k$. Therefore,
+  the optimum $k-$clustering of $S$ can be found in $O(n^{(k-1)})$ operations.
+\end{lemma}
+\begin{proof}
+  By the definition of Voronoi partition, it is easy that each $S_1,\ldots, S_k$ is 
+  defined by its maximum and minimum element. The reason is  Voronoi regions 
+  are convex regions, so if two points belong to a Voronoi region, then the line
+  that connects the points belongs to the Voronoi region.
+  
+  Notice also, that the set $S$ has a minimum value, so this value has to be in 
+  one of the partitions. Without losing any generality, suppose that it is in the 
+  first one, since the order of the sets $S_1,\ldots, S_k$ is irrelevant for the 
+  partition.
+  
+  Fixing the minimum of each $S_2,\ldots, S_k$, fix the partition. The reason is
+  that the the maximum of $S_1$ is given by the following formula:
+  \begin{equation*}
+    \max S_1=\max\{s\in S\ |\ s\le\min_{j=2,\ldots,k} S_j\}.
+  \end{equation*}
+  To recover $S_2,\ldots, S_k$, it is only necessary to apply the same
+  reasoning to $S'=S_2\cup\ldots\cup S_k$. The number of choices for the minimum is
+  exactly the number of sets of $k$ elements of $S$ (that is, $ {\numpoints-1 \choose k-1}$), which is
+  $\cO(n^{k-1})$ and enumerating the sets is trivial. This remark finishes the proof.
+\end{proof}
+
+%\subsection{Low Dimension and Three Clusters ($k=3,d=1,2,3$)}
+%
+%Finally, we report on the improvements for the simple cases
+%where $d\leq k = 3$. Theorem WHATEVER gives time $\mathcal{O}(n^{3d+1})$,
+%from which, for $d=1,2,3$, we obtain respectively
+%$\mathcal{O}(n^4)$, $\mathcal{O}(n^7)$, and $\mathcal{O}(n^{10})$. Similarly, from Theorem
+%EL OTRO we obtain $\mathcal{O}(n^5)$, $\mathcal{O}(n^6)$, and $\mathcal{O}(n^9)$, respectively. 
+%In this case, the argumentation scheme to improve on these
+%quantities is slightly different; we obtain $\mathcal{O}(n^3)$, $\mathcal{O}(n^6)$
+%$\mathcal{O}(n^9)$\dots {\sl Revisar esto, igual me estoy equivocando,
+%pero lo que me sale de esta variante, en terminos de $\mathcal{O}(.)$,
+%solo parece que mejora para $d=1$, y si es asi habria que
+%reorganizarlo; aunque tambien es muy posible que haya 
+%metido la pata en las cuentas y haya que corregirlas --JLB}
+%
+%The following is an asymptotic improvement for the algorithm in the case that 
+%$d\le k=3$. In this case, by Theorem~\ref{thm:inaba}, there are 
+%$O(n^{3d})$ cells and the number of operations required to enumerate them 
+%is $O(n^{3d+1})$. Here we show how to reduce the time to enumerate all the cells.
+%\begin{lemma}
+%  All the Voronoi partitions of a set $S\subset\R^d$ of $n$ points generated 
+%  by three centroids can be enumerated in $\cO(n^{3d})$ time.
+%\end{lemma}
+%\begin{proof}
+%  The idea is to use Lemma~\ref{lemma:NumberVoronoiPartitionsk2} to generate all
+%  possible $2-$clusters and  mixed them to recover all possible $3-$partitions.
+%  The sign vectors are fundamental in this task, because they show which 
+%  $3-$clusterings are possible.
+%
+%  To give a $k-$clustering is equivalent to give the sign vector of a cell of an 
+%  hyperplane arrangement, i. e. 
+%%  \begin{equation*}
+%%    2\dotProd{\vec{p_l}}{(\vec{q_j}-\vec{q_i})}< z_{j,i}
+%%    =\|\vec{q_j}\|^2-\|\vec{q_i}\|^2,\quad \forall j\neq i\text{ if }\vec{p_l}\in S_i, 
+%%  \end{equation*}
+%  Let $\vec{Q}=(\vec{q_2}-\vec{q_1},z_{2,1},
+%  \vec{q_3}-\vec{q_1},z_{3,1},\vec{q_3}-\vec{q_2},z_{3,2})$, then the 
+%  sign vector $    \sv{\vec{Q}}{}$ is,
+%%  \begin{equation*}
+%%    \sv{\vec{Q}}{}=(\SV{(\vec{q_2}-\vec{q_1},z_{2,1})}{},
+%%    \SV{(\vec{q_2}-\vec{q_1},z_{2,1})}{},\SV{(\vec{q_2}-\vec{q_1},z_{2,1})}{})
+%%  \end{equation*}
+%  where $\sv{}{}$ is the sign vector referring to the hyperplane arrangement
+%  defined by the following set of hyperplanes,
+%%  \begin{equation*}
+%%    \H=\{\ (2\vec{p},-1)\ |\ \vec{p}\in S\ \}.
+%%  \end{equation*}
+%  By Lemma~\ref{lemma:NumberVoronoiPartitionsk2}, the number of cells is $\cO(n^d)$ and 
+%  can be enumerated in $\cO(n^{(d+1)}$ time. So, using all possible combinations
+%  of this cells can be done in time $\cO(n^{3d})$. This finishes the proof.
+%\end{proof}
+
+
+\subsection{A Running Example of Algorithm \ref{alg:partitions}}\label{sec:original}
+Let $\S=\{(1,0),(-1,0),(0,1),(0,-1),(0,2)\}$ and assume we are interested in partitioning $\S$ into two
+different clusters (thus, $d=2$, $k=2$, $m=4$ and $l=5$). 
+
+First, for each point $\vec{p}$ in $\S$ and for all pairs $(i,j)$ con $1 \leq i < j \leq k$ we need to define a polynomial $\polynomial_{\vec{p}(ij)}$ in $\R^{dk}$. Since $k=2$ and $(i,j)$ can only take the value $(1,2)$, we drop the subscript $(ij)$ from our notation. Moreover, instead of $\polynomial_{\vec{p_i}}$ we simply write $\polynomial_{i}$, where $\vec{p}_i$ represents the $i$-th point in $\S$.
+
+\begin{eqnarray*}
+  \polynomial_1=  (X_1^2-X_3^2)+(X_2^2-X_4^2)-2(X_1-X_3)-0(X_2-X_4),\\
+  \polynomial_2=  (X_1^2-X_3^2)+(X_2^2-X_4^2)+2(X_1-X_3)-0(X_2-X_4),\\
+  \polynomial_3=  (X_1^2-X_3^2)+(X_2^2-X_4^2)-0(X_1-X_3)-2(X_2-X_4),\\
+  \polynomial_4=  (X_1^2-X_3^2)+(X_2^2-X_4^2)-0(X_1-X_3)+2(X_2-X_4),\\
+  \polynomial_5=  (X_1^2-X_3^2)+(X_2^2-X_4^2)-0(X_1-X_3)-4(X_2-X_4),\\
+\end{eqnarray*}
+
+
+Thus, the four algebraic surfaces that define our arrangement are
+\begin{eqnarray*}
+  \H_1=\{(x_1,x_2,x_3,x_4)\in\R^{4}\mid (x_1-1)^2+(x_2)^2-(x_3-1)^2-(x_4)^2=0\},\\
+  \H_2=\{(x_1,x_2,x_3,x_4)\in\R^{4}\mid (x_1+1)^2+(x_2)^2-(x_3+1)^2-(x_4)^2=0\},\\
+  \H_3=\{(x_1,x_2,x_3,x_4)\in\R^{4}\mid (x_1)^2+(x_2-1)^2-(x_3)^2-(x_4-1)^2=0\},\\
+  \H_4=\{(x_1,x_2,x_3,x_4)\in\R^{4}\mid (x_1)^2+(x_2+1)^2-(x_3)^2-(x_4+1)^2=0\},\\
+  \H_5=\{(x_1,x_2,x_3,x_4)\in\R^{4}\mid (x_1)^2+(x_2-2)^2-(x_3)^2-(x_4-2)^2=0\},\\
+\end{eqnarray*}
+
+Algorithm \ref{alg:cellenumeration} starts with $l'=1$. For each $i$ in $\{1,2,3,4,5\}$, it tries all $e$ in $\{-1,0,+1\}$, and searches for a solution to the equation $$(P_i-e \varepsilon)^2=0.$$
+
+We will only detail here one of these, for example, for $i=1$ and $e=1$. The equation $P_1=\varepsilon$ has many solutions. Consider for example $\vec{x}=(1,\sqrt{\varepsilon},1,0)$. We compute $P_j(\vec{x})$ for all $j>1$ and obtain that $\sv{\vec{x}}{}=(+1,+1,-1,+1,-1)$ (keep in mind that $\varepsilon$ is an infinitesimal).
+In order to compute the partition defined by $\sv{\vec{x}}{}$, recall that $\vec{p} \in S_i$ if and only if $\vec{x} \in  \H^{-}_{\vec{p}(ij)} \cup \H_{\vec{p}(ij)}$ for all $j>i$ and $\vec{x} \in  \H^{+}_{\vec{p}(ji)}$ for all $j<i$. Dropping unnecessary indexes, $\S_1=\{\vec{p}_i \in \S \mid \vec{x} \in H^-_i \cup H_i\}$ and $\S_2=\{\vec{p}_i \in \S \mid \vec{x} \in H^+_i\}$. That is, $\S_1=\{\vec{p}_3,\vec{p}_5\}$ and $\S_2=\{\vec{p}_1,\vec{p}_2,\vec{p}_4\}$.
+
+Other sign vectors obtained for $l'=1$ are $(-1,-1,+1,-1,+1)$, $(0,0,0,0,0)$, $(+1,-1,-1,-1,-1)$ and $(-1,+1,+1,+1,+1)$, which only lead to one more valid 2-clustering of the initial set of points: $\{\vec{p}_1\}$ and $\{\vec{p}_2,\vec{p}_3,\vec{p}_4,\vec{p}_5\}$.
+
+
+The algorithm then checks $2$-tuples and $3$-tuples.
+
+
+\section{Parallel Implementation on a Computing Cluster}
+
+Explanation of the computing cluster
+
+Same as before on it
+
+Podemos clusterizar en 2 (binary splitting) todo diabetes en paralelo?
+
+Podemos hacerlo para 100 tuplas? 200? 300? ...
+
+One example for each subsection. 
+
+
+\section{Quality of the clustering?}
+
+Compare to k-means heuristico - esto hay que pensar un poco como hacerlo!
+
+%\section{Usage for prediction?}
+%
+%Sobre diabetes, si hemos podido hacer binary splitting del dataset
+%entero, podermos dar la matriz de confusion con las etiquetas
+%
+%Luego, discretizamos en tres intervalos cada uno de los atributos y
+%vemos la tasa de acierto del predictor Naive Bayes - esto lo comparamos
+%con la misma tasa de acierto discretizando de otras maneras, tomándolas
+%de las tablas de YangWebb01 y YangWebb03
+
+\section{Conclusion}
+We have used the idea in \cite{} and have improved on running times.
+
+Implementation available.
+
+Allows for creating a ``repository'' with the value of global minimum for datasets so people can contrast their clustering algorithms against the optimum.
+
+
+
+\bibliographystyle{plain}
+\bibliography{bibfile}
+
+
+
+\end{document}

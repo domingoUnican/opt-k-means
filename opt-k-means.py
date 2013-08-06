@@ -9,7 +9,6 @@ import itertools
 import os, copy, sys
 from numpy import random
 from scipy import linalg, matrix, array, sum, compress, transpose
-from scipy.linalg import norm
 from scipy.cluster.vq import vq, kmeans, kmeans2
 import time
 import multiprocessing
@@ -20,9 +19,14 @@ from itertools import izip, product
 from enumeration import alternate, enumerate_list
 
 MESSAGE = "for %d clusters the intercluster measure is \
- OPTIMUM:%.2f, SCIPY:%.2f "
+ OPTIMUM: %.2f "
 
 def combinations_with_replacement(iterable, r):
+    '''
+    Copy and paste of the generator that returns the different
+    combinations with replacement of a set of elements given as an
+    iterable. This function can be found in the official docs.
+    '''
     pool = tuple(iterable)
     n = len(pool)
     if not n and r:
@@ -40,7 +44,8 @@ def combinations_with_replacement(iterable, r):
 
 def null(A1, eps=1e-19):
     '''
-    Returns the kernel of matrix A1
+    Returns the kernel of matrix A1. Implementation taken from
+    http://stackoverflow.com/questions/5889142/
     '''
     rows, columns = A1.shape
     if (rows < columns):
@@ -122,13 +127,11 @@ def split(partition):
 
         for element in partition:
             if isinstance(element,tuple):
-                b = 1 if element[i] > 0 else 0
-                positive.append(b)
-                negative.append((b+1)%2)
+                b = element[i] > 0
             else:
-                b = 1 if element > 0 else 0
-                positive.append(b)
-                negative.append((b+1)%2)
+                b = element > 0
+            positive.append( int(b))
+            negative.append(int (not b))
         yield tuple(positive)
         yield tuple(negative)
 
@@ -152,53 +155,6 @@ def ensure_dir(d):
 
 
 
-def generate_centroids(data, k):
-    """
-    generate k centroids for the  points in l
-    """
-    llen = data.shape[0]
-    result = [ data[random.randint(0,llen-1)]]
-    for i in xrange(k-1):
-        probabilities=[min([norm(element-centroid)
-                            for centroid in result])**2
-                            for element in data]
-        totalSum= sum(probabilities)
-        rvalue = random.uniform(0,totalSum)
-        total_sum = 0
-        position = -1
-        while(position <= llen and total_sum <= rvalue):
-            total_sum += probabilities[0]
-            probabilities = probabilities[1:]
-            position += 1
-        result.append(data[position])
-    return matrix(result)
-
-def kmeans_plus(data, k, itera =1000):
-    """
-    Naive implementation of kmeans++.  This algorithm finds k random
-    centroids, taken under a special distribution. Then, normal kmeans
-    is applied. This is repeated a
-    sufficient number of times and take the centroids corresponding to
-    the minimum intercluster measure
-    Arguments:
-    - `data`: The data, it is necessary to be a scipy matrix
-    - `k`: Number of clusters
-    - `itera`: Number of iterations to be applied the algorithm
-    """
-    min_dist = numpy.infty
-    min_centroids = None
-    min_code = None
-    for i in xrange(itera):
-        centroids = generate_centroids(data, k)
-        kmeans_centroids, kmeans_code = kmeans2(data,
-                                               centroids,
-                                               minit = 'matrix')
-        kmeans_dist = numpy.sum(vq(d.data,kmeans_centroids)[1])
-        if kmeans_dist < min_dist:
-            min_dist = kmeans_dist
-            min_centroids = kmeans_centroids
-            min_code = kmeans_code
-    return min_centroids, min_dist, min_code
 
 class dataset:
 
@@ -241,7 +197,6 @@ class dataset:
                 for j in xrange(dimY):
                     for i in xrange(dimX):
                         self.data[j][i]=data[j][i]
-        print "datos:",self.data
 
 
 
@@ -317,8 +272,6 @@ class dataset:
         with open(m_file,'w') as f:
             pickle.dump(min_dist, f)
             pickle.dump(min_par, f)
-
-
         nombre_fichero = self.nombre+str(pid)
         with open(nombre_fichero,'w') as f:
             pickle.dump(all_p1,f)
@@ -638,6 +591,7 @@ if __name__=='__main__':
         warnings.simplefilter("ignore")
         d=dataset(dppoint,points,filen,processes = nproc)
     t1=time.time()
+    print d.data
     d.find_optimum_two_launch()
     min_dist = numpy.infty
     min_par = []
@@ -655,20 +609,16 @@ if __name__=='__main__':
             if dist < min_dist:
                 min_dist = dist
                 min_par  = par
-    kmeans_centroids, kmeans_dist, kmeans_code = kmeans_plus(
-        d.data,k,itera=20000)
-    kmeans_dist /= d.dimY
+
     list_par = []
+    print "min_par", min_par
     if k > 2:
         for i in izip(*min_par):
             list_par.append( i.index(1))
-    print MESSAGE %(k, min_dist, kmeans_dist)
+    print MESSAGE %(k, min_dist)
+    print d.data
     with open(d.m_file[:-1],'w') as f:
         f.write(str(min_dist))
         f.write('\n')
         f.write(str(list(list_par)))
-    with open(d.i_file[:-1],'w') as f:
-        f.write(str(kmeans_dist))
-        f.write('\n')
-        f.write(str(list(kmeans_code)))
     print "time: %.2f" %(time.time()-t1,)
