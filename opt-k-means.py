@@ -7,13 +7,13 @@ import scipy.linalg
 import numpy
 import itertools
 import os, copy, sys
+from numpy import random
 from scipy import linalg, matrix, array, sum, compress, transpose
 from scipy.linalg import norm
 from scipy.cluster.vq import vq, kmeans, kmeans2
 import time
 import multiprocessing
 import ctypes
-from cArray import cArray
 from multiprocessing import Process
 from numpy import float64 as float
 from itertools import izip, product
@@ -150,6 +150,55 @@ def ensure_dir(d):
     if not os.path.exists(d):
         os.makedirs(d)
 
+
+
+def generate_centroids(data, k):
+    """
+    generate k centroids for the  points in l
+    """
+    llen = data.shape[0]
+    result = [ data[random.randint(0,llen-1)]]
+    for i in xrange(k-1):
+        probabilities=[min([norm(element-centroid)
+                            for centroid in result])**2
+                            for element in data]
+        totalSum= sum(probabilities)
+        rvalue = random.uniform(0,totalSum)
+        total_sum = 0
+        position = -1
+        while(position <= llen and total_sum <= rvalue):
+            total_sum += probabilities[0]
+            probabilities = probabilities[1:]
+            position += 1
+        result.append(data[position])
+    return matrix(result)
+
+def kmeans_plus(data, k, itera =1000):
+    """
+    Naive implementation of kmeans++.  This algorithm finds k random
+    centroids, taken under a special distribution. Then, normal kmeans
+    is applied. This is repeated a
+    sufficient number of times and take the centroids corresponding to
+    the minimum intercluster measure
+    Arguments:
+    - `data`: The data, it is necessary to be a scipy matrix
+    - `k`: Number of clusters
+    - `itera`: Number of iterations to be applied the algorithm
+    """
+    min_dist = numpy.infty
+    min_centroids = None
+    min_code = None
+    for i in xrange(itera):
+        centroids = generate_centroids(data, k)
+        kmeans_centroids, kmeans_code = kmeans2(data,
+                                               centroids,
+                                               minit = 'matrix')
+        kmeans_dist = numpy.sum(vq(d.data,kmeans_centroids)[1])
+        if kmeans_dist < min_dist:
+            min_dist = kmeans_dist
+            min_centroids = kmeans_centroids
+            min_code = kmeans_code
+    return min_centroids, min_dist, min_code
 
 class dataset:
 
@@ -317,14 +366,9 @@ class dataset:
         out_file = open(self.nombre_clusters+str(pid),"w")
         cont = 0
         for l1 in myLines:
-            temp=[]
             for l in itertools.combinations_with_replacement(self.k2,k-2):
-                cL1=cArray(self.dimY,l1)
-                for i in range(k-2):
-                    cL=cArray(self.dimY,l[i])
-                    cL1.arrayAnd(cL)
-                    cont+=1
-                temp = tuple(cL1[i] for i in xrange(self.dimY))
+                temp = tuple(all((i > 0 for i in l))
+                                 for l in izip(l1,*l))
                 all_clusters.add(temp)
         pickle.dump(all_clusters, out_file)
         out_file.close()
@@ -533,25 +577,21 @@ class dataset:
 
 
 def testMode():
-    points=[i for i in range(4,20)]
+    points=[i for i in range(4,30)]
     dims=[i for i in range(2,3)]
-    clusters = [2,3]
+    clusters = [3]
     numpy.seterr(all='raise')
     for dim in dims:
         for point in points:
-            for cluster in clusters:
-                print 'DIM ',dim,' POINTS ',point,' K ',cluster,':'
-                d=dataset(dim,point,'linux.txt',processes = 12)
-
+            for k in clusters:
+                d=dataset(dim,point,'linux.txt',processes = 2)
                 t1=time.time()
-                d.findOptimumTwoLaunch()
+                d.find_optimum_two_launch()
+                if k > 2:
+                    d.cluster_k_launch(k)
+                    d.find_general_optimum_launch(k)
                 opttime=time.time()
-                print "    OptimumTwo takes",opttime-t1
-                d.find_k_launch(cluster)
-
-                findktime=time.time()
-                print "    Find K takes",findktime-opttime
-
+                print point,opttime-t1
 if __name__=='__main__':
     dppoint = 2
     points = 10
@@ -615,8 +655,8 @@ if __name__=='__main__':
             if dist < min_dist:
                 min_dist = dist
                 min_par  = par
-    kmeans_centroids,kmeans_code = kmeans2(d.data,k,iter=20000)
-    kmeans_dist = numpy.sum(vq(d.data,kmeans_centroids)[1])
+    kmeans_centroids, kmeans_dist, kmeans_code = kmeans_plus(
+        d.data,k,itera=20000)
     kmeans_dist /= d.dimY
     list_par = []
     if k > 2:
@@ -631,3 +671,4 @@ if __name__=='__main__':
         f.write(str(kmeans_dist))
         f.write('\n')
         f.write(str(list(kmeans_code)))
+    print "time: %.2f" %(time.time()-t1,)
