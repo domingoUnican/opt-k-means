@@ -1,52 +1,34 @@
-opt-k-means
-===========
+opt-k-means (based on Avis and Fukuda)
+======================================
 
 This code finds all possible k-clusters, which are convex, and select
-the minimum one with minimal inter cluster function   
-
-NEWS (0.0.2)
-===========
-- There is a new file called not-so-opt.py, containing a completely
-  implementation in python. That is, runing this program works the same
-  but it does not contain any reference to .so.
-- The implementation of Kmeans in Scipy is not the one in Scipy. The 
-  initialization of the centroids is done as described in the kmeans++
-  algorithm.
+the minimum one with minimal inter cluster function. This 
+method is efficient in the sense that the algorithm find all
+clusterings defined by a Voronoi diagram which are not trivial and
+without repetition.
 
 NEWS (0.0.1)
-===========
-- The program prints only once the inter cluster measure of the
-  optimum solution with the inter cluster measure found by k-means
-  (implemented in SCIPY)
-- The default number of procs is set to 4
-- Bookkeping is done in a separate directory
-- The minimum cluster is written to a file named 'minimum_cluster'
-  with its inter cluster measure
-- The kmeans minimum cluster is written to a file named
-  'kmeans_cluster' with its inter cluster measure
- 
+============
+- Implementation of an abstract class, which represent the algorithm
+  of Avis and Fukuda for enumeration
+- Cleaning of several parts of the code which are not necessary for
+  this version
 
 REQUIREMENTS
 ============
-The following libraries are required:
-
-- numpy
-- sciPy
-
-Also, because there are some parts of the code that use c code, it is 
-necessary a compiler like gcc.
+Sage is required, as the implementation relays on:
+- a class called QQ which represents EXACT rational numbers
+- a class called Polyhedron which represent general polyhedron in
+  general spaces
 
 TO INSTALL
 ==========
-First take the file array.c, and issue the following command on the terminal
 
-gcc -O3 -shared -Wl,-soname,array -o arraylib.so -fPIC array.c
+Upload to the Sage server
 
 TO USE
 ==========
-The script must be run in the terminal, so to see the help just write:
-
-    python opt-k-means -h
+TODO
 
 The data file name must be a file of float numbers, separated by
 commas and in each line, there must be the same number of features.
