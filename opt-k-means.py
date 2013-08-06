@@ -241,7 +241,7 @@ class dataset:
                 for j in xrange(dimY):
                     for i in xrange(dimX):
                         self.data[j][i]=data[j][i]
-
+        print "datos:",self.data
 
 
 

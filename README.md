@@ -4,6 +4,11 @@ opt-k-means (pure python)
 This code finds all possible k-clusters, which are convex, and select
 the minimum one with minimal inter cluster function   
 
+NEWS (0.0.4)
+===========
+- Added one separated file with the implementation of kmean++
+
+
 NEWS (0.0.3)
 ===========
 - There is only one main program opt-k-means.py, containing a completely
