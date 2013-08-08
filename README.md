@@ -7,6 +7,15 @@ method is efficient in the sense that the algorithm find all
 clusterings defined by a Voronoi diagram which are not trivial and
 without repetition.
 
+NEWS (0.0.2)
+============
+- Implementation of parallelization in Enumerator (a class implementin
+  reverse search)
+- First implementation of an arrangement of hyperplanes as a subclass
+  of Enumerator (a class implementing reverse_search)
+- First implementation of Cluster2, a dummy cluss which finds all
+  possible 2- partitions defined by Voronoi diagramm.
+
 NEWS (0.0.1)
 ============
 - Implementation of an abstract class, which represent the algorithm
