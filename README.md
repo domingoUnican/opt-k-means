@@ -7,6 +7,12 @@ method is efficient in the sense that the algorithm find all
 clusterings defined by a Voronoi diagram which are not trivial and
 without repetition.
 
+NEWS (0.0.3)
+============
+- Implementation of Cluster, a class with outputs all possible
+  partitioning in k clusters. This class is a subclass of Enumerator,
+  so it is parallelizable  
+
 NEWS (0.0.2)
 ============
 - Implementation of parallelization in Enumerator (a class implementin
@@ -37,8 +43,17 @@ Upload to the Sage server
 
 TO USE
 ==========
-TODO
 
-The data file name must be a file of float numbers, separated by
-commas and in each line, there must be the same number of features.
+Class Cluster contains everything that you need, it takes as arguments 
+a list of points (representing as list of integers), the number of
+processors in your computer and other argments relating in which
+directory to do bookmarking. 
 
+To generate all partitions, just call the method codes_m_launch()
+This is a generator, so it is necessary to iterate over it.
+
+Each partition is coded as a list of k tuples, where each tuple
+represent the pertenence of a point to the cluster.
+This means tuple t[i] = 1 iff p[i] belong to that cluster.
+
+In order to save space, when k > 2, empty clusters are not given a vector.

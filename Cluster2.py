@@ -14,17 +14,17 @@ class Cluster2:
         """
         Constructor
         """
-        self.f = filename
+        self.filename = filename
         self.directory = '/tmp'
         ensure_dir(self.directory)
         self.processes = processes
-        self.m_file = os.path.join(self.directory, self.f)
+        self.m_file = os.path.join(self.directory, self.filename)
         self.points = copy(points)
         self.d = len(points[0])
 
     def codes(self):
         """
-        This is a generator, which returns all posible clusters
+        This is a generator, which returns all possible clusters
         codified as a tuple t satisfying:
         t[i] == 1 iff points[i] belong to cluster 1
         """
@@ -33,15 +33,16 @@ class Cluster2:
         points_aux = [[1] + [ 2 * i for i in l]
                       for l in self.points]
         pointR = [bound] + [0] * self.d
-        ar = Arrangement(points_aux, pointR)
+        ar = Arrangement(points_aux, pointR, filename = self.filename) 
         for l in ar.reverse_search({tuple([1]*len(self.points))}):
             yield l
 
 
     def codes_m_launch(self):
         '''
-        Function that launch several processes to write to disc all
-        possible two clusters in so many separated files as processes.
+        Function that launchs several processes to generate all
+        possible two clusters. It is needed writing to disc first in
+        as many separated files as processes all possible two clusterings 
         '''
         bound = max(max(self.points))
         points_aux = [[1] + [ 2 * i for i in l]
