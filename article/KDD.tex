@@ -4,6 +4,7 @@
 \floatname{algorithm}{Procedure}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\cH}{\mathcal{H}}
 \input{DataMining.tex}
 \begin{document}
 %%d : dimension
@@ -47,11 +48,65 @@ We will need the following concepts from topology:
 \item A  set contained in $\RR^d$  is \textit{convex} if for any
   pair of points within the set, every point in the straight line
   segment that joins them is also within the object.
-\item Given a set of points $\Set\RR^{d}$, the convex hull of $\Set$ is the
+\item Given a set of points $\Set\subset\RR^{d}$, the convex hull of $\Set$ is the
   smallest set of $\RR^{d}$ which contains $\Set$.
-
+\item   Given $\vec{a}\in\RR^d-\{\vec{0}\}$ and $b\in\RR$, the set 
+  $\cH = \{\vec{x}\in\RR^d : \transpose{\vec{a}}\vec{x}=b\}$ is called
+  a hyperplane.
+\item A point $\vec{p}\in\RR^{d}$ lies in the \textit{left side} of
+  hyperplane $\cH$ if $\transpose{\vec{a}}\vec{p}>b$. If 
+  $\transpose{\vec{a}}\vec{p} < b$, the point $\vec{p}$ lies  in the
+  \textit{right side} of hyperplane $\cH$.
+\item An hyperplane $\cH$ \textit{separates} two sets $\Set,\
+  \Set'\subset\RR^d$ if all the points in $\Set$ lies in the left side
+  of $\cH$ and all the points in $\Set'$ lies in the right side of $\cH$.
 \end{itemize}
+We cite here  the maximum separation hyperplane.
+\begin{lemma}
+  \label{lem:maximum_separation}
+  For any two convex sets $\Set,\ \Set'\subset \RR^d$ such that $\Set\cap \Set' =
+  \emptyset$,  there exists an   hyperplane $\cH$ that separates
+  $\Set$ and $\Set'$.
+\end{lemma}
 
+As it was stated before, it is known that one optimal partition is defined using
+$k$ centroids. Partitions defined by centroid have a very interesting
+property.
+\begin{lemma}
+  Given a set of point $\Set\subset \RR^{d}$ and centroids
+  $\vec{q_1},\ldots,\vec{q_k}\in\RR^d$, the partition $\S_1,\ldots,
+  \S_k$ defined as 
+  \begin{equation*}
+    \Set_j=\bigcap_{l=1}^{k}\{\vec{p}\in\Set\ :\ 
+    \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
+  \end{equation*}
+  for $j = 1,\ldots, k$ satisfies:
+  \begin{itemize}
+  \item the intersection of the convex hull of any two different
+    clusters $\Set_i,\Set_j$ is empty,
+  \item for each pair $\Set_i, \Set_j$ exists an hyperplane $\cH$ that 
+    separates $\Set_i$ and $\Set_j$.
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+  The first assertion of the lemma is proved by induction. For $k=2$,
+  it is trivial. The general case is done noting that the intersection
+  of two convex sets is a convex set. So, the convex hull of 
+  \begin{equation*}
+    \Set_j=\bigcap_{l=1}^{k}\{\vec{p}\in\Set\ :\ 
+    \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
+  \end{equation*}
+  is just the intersection of the convex hulls of 
+  \begin{equation*}
+    \{\vec{p}\in\Set\ :\ 
+    \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
+  \end{equation*}
+  for $l\neq j$, which are disjoint by induction.
+
+  The second assertion is a direct application of
+  Lemma~\ref{lem:maximum_separation} and that $\Set_i, \Set_j$ are
+  convex sets. 
+\end{proof}
 % A common way to make a partition is using the concept of Voronoi diagrams, the idea
 % behind it is to pick $k$ points $\vec{q_1},\ldots, \vec{q_k}$ and divide $S$ into 
 % subsets $S_1,\ldots, S_k$ where each of the cluster $S_j$  is defined by 
