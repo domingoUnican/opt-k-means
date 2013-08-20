@@ -74,8 +74,8 @@ $k$ centroids. Partitions defined by centroid have a very interesting
 property.
 \begin{lemma}
   Given a set of point $\Set\subset \RR^{d}$ and centroids
-  $\vec{q_1},\ldots,\vec{q_k}\in\RR^d$, the partition $\S_1,\ldots,
-  \S_k$ defined as 
+  $\vec{q_1},\ldots,\vec{q_k}\in\RR^d$, the partition $\Set_1,\ldots,
+  \Set_k$ defined as 
   \begin{equation*}
     \Set_j=\bigcap_{l=1}^{k}\{\vec{p}\in\Set\ :\ 
     \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
@@ -107,492 +107,122 @@ property.
   Lemma~\ref{lem:maximum_separation} and that $\Set_i, \Set_j$ are
   convex sets. 
 \end{proof}
-% A common way to make a partition is using the concept of Voronoi diagrams, the idea
-% behind it is to pick $k$ points $\vec{q_1},\ldots, \vec{q_k}$ and divide $S$ into 
-% subsets $S_1,\ldots, S_k$ where each of the cluster $S_j$  is defined by 
-% the points that are closest to the correspondent $\vec{q_j}$. Here, we give the 
-% mathematical definition.
-% \begin{definition}
-%   Given $\vec{q_1},\ldots,\vec{q_k}\in\RR^{d}$ we define the Voronoi region
-%   $\Voronoi{\vec{q_j}}$ by
-%   \begin{equation*}
-%     \Voronoi{\vec{q_j}}=\bigcap_{l=1}^{k}\{\vec{p}\in\RR^d : 
-%     \|\vec{p}-\vec{q_j}\|^2< \|\vec{p}-\vec{q_l}\|^2\}.
-%   \end{equation*}
-%   A Voronoi partition $S_1,\ldots, S_k$ is defined as follows $\vec{p}\in S_{j}\iff 
-%   \vec{p}\in\Voronoi{\vec{q_j}}.$
-% \end{definition}
 
+\section{Reverse Enumeration}
+\label{sec:reverse_enumeration}
+Reverse Enumeration is a method for enumerating element in a set. It
+was introduced in~\cite{AvisFukuda} which solves the following
+problem,
+\begin{problem}
+  \label{prob:traversal}
+  Suppose that $G = (V, E)$ be an undirected graph, where $V$ is a set
+  of vertex and $E$ is the edge set. Enumerate all the elements in $V$. 
+\end{problem}
+The difficulty of this particular problem lies in the fact that $V$
+is  not given explicitly, however given a node $v\in V$ it is possible
+to calculate its neighbors.
 
-\bibliographystyle{plain}
-\bibliography{bibliography}
-\end{document}
+The problem of graph traversal is well-known, and there are 
+well-known algorithms like breadth-first search and depth-first
+search, see~\cite[Page 597]{Cormen}. 
 
-\section{Basic Concepts and Terminology about Hyperplanes Arrangements}
-\label{sec:BasicConceptsHyperplanes}
-Let $d$ be a positive integer and $\RR$ the field of real numbers. 
-We denote by 
+Unfortunately, these algorithms needs to mantain a data 
+structure with all the nodes that have been visited in order to avoid
+looping endlessly because of  cycles in the graph. This implies a big
+drawback. % Also, the complexity of these algorithms depends on the
+% cardinality of the set of edges, \textbf{instead} of depending only on
+% the number of nodes.
+  
+For introducing a more efficient way of solving
+Problem~\ref{prob:traversal} we need to introduce the definition of
+\textit{local search}. 
+\begin{definition}
+  A local search  $(G, R, f)$ is a triple satisfying $R\subset V$, $f$
+  is  a mapping $f: V\mapsto V$ with the following properties:
+  \begin{itemize}
+  \item $(v,f(v))$ is an edge of the graph for $v\in V- R$,
+  \item for all $v\in  V- R$, there exists a positive integer $t$ such
+    that $f^{t}(v)\in R$.
+  \end{itemize}
+  The function $f$ is said to be the \textit{local search function}
+  and $G$ the \textit{underlaying graph structure}.
+\end{definition}
+Informally a local search algorithm is a way of explore a
+graph in a non systematic way, starting in any candidate and heading
+for the set of solutions $R$,  see~\cite[Page 110]{RussellNorvig} for
+a more detailed exposition.  
+
+A local search define a subgraph of $G$ called the \textit{trace} $T =
+(V, E(f))$ where,
 \begin{equation*}
-\vec{a}=(a_1,\ldots,a_d),\quad a_1,\ldots, a_d\in\RR
+  E(f) = \{(v,f(v)\ :\ v\in V- R\}.
 \end{equation*}
- elements of $\RR^d$, where $\RR^d$ is 
-a vector space of dimension $d$ over the field $\RR$.
-We also consider matrices  with 
-the usual operations involving matrices, namely
-multiplication, addition and transposition. Vectors in $\RR^d$
-are consider as matrices with $d$ rows and $1$ column. The notation for the
-transposition of a matrix $\mat{A}$  is $\transpose{A}$.
-\begin{definition}
-  Given $\vec{a}\in\RR-\{\vec{0}\}$ and $b\in\RR$, the set 
-  $\{\vec{x}\in\RR^d : \transpose{\vec{a}}\vec{x}=b\}$ is called a hyperplane.
-\end{definition}
-We also use $\dotProd{\vec{a}}{\vec{x}}$ to denote $\transpose{\vec{a}}\vec{x}$,
-which correspond to the standard dot product, and 
-the matrix form $\mat{A}\vec{x}=\vec{b}$ to encode 
-the finite set of hyperplanes $\H=\{\H[1],\ldots, \H[m]\}$, where
-\begin{equation}
-  \label{eq:HyperplaneDefinition}
-  \H[i]=\{\vec{x}\in\RR^{d}:\sum_{j=1}^{d}a_{i,j}x_j=b_i \}.
-\end{equation}
-\begin{definition}
-  A set of hyperplanes in $\RR^d$ partitions the space into relatively
-  open convex polyhedral regions, called faces, of all dimensions. This
-partition is called a hyperplane arrangement.
-\end{definition}
-We make a distinction between the two sides of a hyperplane. A point
-$\vec{p}\in\RR^{d}$ is on the positive side of hyperplane 
-$\H[i]$, denoted by $\H[i]^{+}$, if 
-\begin{equation*}
-  \sum_{j=1}^{d}a_{i,j}p_{j}>b_i.
-\end{equation*}
-Similarly, we define $\vec{p}\in\RR^{d}$ is on the negative side of hyperplane $\H[i]$
-and we denote it by $\H[i]^{-}$.
+An important fact that appear in~\cite[Property 2.1]{AvisFukuda} is
+that the trace of any local search contains all the nodes of $G$ and
+each component contains only one element of the set $R$ and no
+cycles. 
 
-For each point $\vec{p}\in\RR^{d}$ we define a sign vector of length $m$ consisting
-of $+,0,-$ signs as follows:
-\begin{equation*}
-  \sv{\vec{p}}{i}=
-  \begin{cases}
-    +&\text{ if } \vec{p}\in\H[i]^+,\\
-    -&\text{ if }\vec{p}\in\H[i]^-,\\
-    0&\text{ if }\vec{p}\in\H[i],\\
-  \end{cases}
-\end{equation*}
-where $i=1,\ldots, m$ and $m$ is the number of hyperplanes.
+So, most efficient way to output all the component is to traverse all
+the components of $T$, starting at every element of $R$. 
+However, for a local search function $f$ is normally difficult to find
+the preimages of a node $v$. In most of the cases, there is an 
+\textit{adjacency oracle} which gives the neighbours of a node. The
+original definition can be found in~\cite{AvisFukuda}, but here we
+simplify it for our purposes. 
 \begin{definition}
-  A face is a set of points with the same sign vector. It is called
-a $k-face$ if its dimension is $k\le d$ and a cell if the dimension is $d$.
+  A graph $G$ is given by an  adjacency oracle if there exists  a
+  function $Adj$ that takes a node $v$ an return an ordered list of
+  neighbors of $v$.
 \end{definition}
-\begin{definition}
-  The support of a face $f$ is the set of indexes of the non-zero elements
-  in the sign vector. The positive and negative supports of $f$ are the sets
-  of indices of the hyperplanes on whose, respectively negative, side a face lies and
-  are denoted by $f^+$ and $f^-$.
-\end{definition}
-
-\section{Algorithm for Cell Enumeration}
-\label{sec:AlgorithmCellEnumeration}
-Consider the state space of all the cells that could possibly exist in 
-an arrangement. The state space consists of $2^m$ possible sign vectors
-of which at most $O(m^d)$ can exist in an arrangement, 
-we cite here the result. 
-\begin{theorem}{\cite[page 8]{Edelsbrunner87}}
-\label{thm:NumberCells}
-  Given a hyperplane arrangement of $m$ hyperplanes in $\RR^d$, let $f(m)$ be
-  the number of cells, then
-  \begin{equation*}
-    f(m)\le \sum_{i=0}^{d}\binom{m}{d-i}
-  \end{equation*}
-\end{theorem}
-The state space can be
-searched efficiently by assigning to each cell (except or the root cell) 
-a unique parent cell, thereby obtaining a directed tree structure for the
-cells. The algorithm traverses the nodes of this tree from the root
-to the leaves, giving at each 
-step an interior point of the cells. One procedure, called 
-(ParentSearch) discovers the parent cell of a 
-given one. The parent cell of a cell $c$ is a deterministically chosen 
-neighbor that has one more $+$ in its sign vector. Later, we will explain
-what it is the criterium and how to find it efficiently. 
-If $c_1$ is the parent cell of $c_2$, then $c_2$ is a child
-cell of $c_1$.
-Another procedure, the adjacency oracle (AllAdj), returns
-all neighbours of a cell, i. e. any cell that has a common $d-1$-face 
-with the given one.
-
-The sign vector of the root cell consists only of $+'s$. Any cell
-can be the root cell of an hyperplane arrangement just by picking
-a random cell and multiplying by $-1$ all hyperplanes whose indexes 
-correspond to the negative support of the cell. Here, we give the algorithm
-CellEnum which returns all the cells of the subtree where the given cell
-is the root of the tree.
+So, given a graph $G$ given by an adjacency oracle $Adj$ and a local
+search $(G,R,f)$, Algorithm~\ref{alg:reverse_enumeration} will output
+all the nodes. 
 \begin{algorithm}
-  \caption{Algorithm CellEnum}
-  \label{alg:CellEnum}
+  \caption{General Reverse Search}
+  \label{alg:reverse_enumeration}
   \begin{algorithmic}
-    \REQUIRE cell $c$ 
-    \ENSURE all cells in the subtree rooted at $c$
-    \STATE save $c$
-    \FORALL{$h\in AllAdj(c)$}
-    \IF{$h\in c^+$}
-    \STATE e=c
-    \STATE $e_h$=-
-    \IF{ParentSearch(e)==h}
-    \STATE CellEnum(e)
+    \REQUIRE An adjacency oracle $Adj$, a local search $(G,R,f)$
+    \ENSURE all nodes in $V$ without any repetition
+    \FORALL{$r\in R$}
+    \STATE yield $r$
+    \STATE {$i, do, v = 1, True, r$}
+    \WHILE{$do$}
+    \WHILE{ there are at least $i$ elements in $Adj(v)$}
+    \STATE let $Next$ be the $i$th element of $Adj(v)$
+    \IF{$f(Next) == v$}
+    \STATE $v, i = Next, 0$
+    \ELSE
+    \STATE { $i = i +1$}
     \ENDIF
+    \ENDWHILE
+    \IF{$v == r$}
+    \STATE{$do = False$}
+    \ELSE
+    \STATE $u, v, i  = v, f(v), 1$
+    \WHILE{$i$th element of $Adj(v)$ is not $u$}
+    \STATE $i = i +1$
+    \ENDWHILE
     \ENDIF
+    \ENDWHILE
     \ENDFOR
   \end{algorithmic}
 \end{algorithm}
-There are some details of the implementation of the algorithm that are 
-necessary to explain.
-The procedure ParentSearch returns the position of the vector which is different
-between the given cell and the parent cell. The procedure \textit{AllAdj} returns
-a list of the indices of the non-redundant hyperplanes that bound a cell, which
-is enough to identify the neighbours.
-
-\subsection{An Interior Point}
-\label{sec:subInteriorPoint}
-Finding an interior point of a cell $c$ is done solving the following linear program:
-\begin{eqnarray*}
-  \text{maximize }z&&,\\
-  \text{subject to}&\dotProd{\vec{a_s}}{\vec{x}}+z\le b_s& \forall s\in c^+,\\
-  &\dotProd{\vec{a_t}}{\vec{x}}-z\ge b_t& \forall t\in c^-,\\
-  &z\le 1 &\text{or any other constant.}
-\end{eqnarray*}
-We denote this procedure by \textit{IntPt}.
-When the dimension $d$ is fixed, solving this linear program can be solved in 
-polynomial time. Instead of doing this directly, it is better to use the information
-returned by the procedure \textit{AllAdj}. 
- 
-\subsection{Removal of the Redundant Hyperplanes}
-The method \textit{AllAdj} is exactly a method to remove redundant inequalities. 
-A list with the positions of the nonredundant hyperplanes  is the output of 
-\textit{AllAdj}. To know if an inequality is redundant, it is only to 
-solve the following linear program,
-\begin{eqnarray*}
-  \text{maximize }&\dotProd{\vec{h}}{\vec{x}},\\
-  \text{subject to}&\dotProd{\mat{A}}{\vec{x}}\le \vec{b},\\
-  &\dotProd{\vec{h}}{\vec{x}}\le t+1.\\
-\end{eqnarray*}
-If the value is strictly greater than $t$, then the inequality is not redundant.
-
-
-\subsection{The Parent Search}
-\label{sec:subParentSearch}
-The purpose of the parent search is to identify a unique parent cell
-for each cell. The algorithm is specified here.
-\begin{algorithm}
-  \caption{Algorithm ParentSearch}
-  \begin{algorithmic}
-  \REQUIRE a cell $c$ represented as a sign vector, the hyperplanes given 
-  by $\mat{A}$ and $\vec{b}$ and an interior point $\vec{r}$ of the root cell.
-  \ENSURE the position which is different between the cell and its parent
-  \STATE min=1
-  \STATE $\vec{p}=IntPt(c)$
-  \FORALL{$\vec{h_k}$ hyperplane encoded in $\mat{A}$}
-  \IF{$h_k$==$MinDistance(\vec{h_{min}}, \vec{h_k},\vec{p},\vec{r})$}
-  \STATE $min=k$
-  \ENDIF
-  \ENDFOR
-  \STATE return min
-  \end{algorithmic}
-\end{algorithm}
-MinDistance is another method, which returns the hyperplane which intersect
-the segment which joins $\vec{p}$ and $\vec{r}$ closest to $\vec{p}$.
-For details about the proof, see~\cite{SleumerMsc}.
-\begin{algorithm}
-  \caption{Algorithm MinDistance}
-  \begin{algorithmic}
-  \REQUIRE Two hyperplanes $h_1,h_2$ and two different points $\vec{p},\vec{r}$
-  \ENSURE the hyperplane which intersects the segment closest to $\vec{p}$ 
-  \STATE
-  \begin{equation*}
-    c_1=\frac{-\dotProd{h_1}{\vec{p}}}{\dotProd{h_1}{(\vec{r}-\vec{p})}},
-    \quad c_2=\frac{-\dotProd{h_2}{\vec{p}}}{\dotProd{h_2}{(\vec{r}-\vec{p})}}
-  \end{equation*}
-  \IF {$c_1>c_2$}
-  \STATE return $h_2$
-  \ELSIF{$c_1<c_2$}
-  \STATE return $h_1$
-  \ELSE
-  \STATE returns the minimum of $-h_1/\dotProd{h_1}{\vec{p}}$ and 
-  $-h_2/\dotProd{h_2}{\vec{p}}$ by the lexicographic order.
-  \ENDIF
-  \end{algorithmic}
-\end{algorithm}
- This is not the only way to define the parent cell of a given one.
-Avis and Fukuda proposed another way to find the parent cell in~\cite{AvisFukuda}
-which involves solving $m$ different linear programming problems. The main 
-advantage of this one is that it requires solving only one linear programming at most.
-Using this improvement, Algorithm~\ref{alg:CellEnum} requires $O(m)$ operations 
-for each cell, where the implied constant depends on the dimension. 
+The complexity of the algorithm is given in~\cite[Theorem
+2.2]{AvisFukuda}, which we enunciate here.
 \begin{theorem}
-  \label{thm:timeAlgCellEnum}  
-  Given a hyperplane arrangement of $m$ hyperplanes in $\RR^d$, let $f(m)$ be
-  the number of cells,   Algorithm~\ref{alg:CellEnum} requires $O(mf(m))$, operations 
-  to enumerate all the cells and an interior point for each cell, 
-  where the implied constant depends on $d$.
+  Let   $(G, R, f)$ be a local search where  $G$ is
+  given by a adjacency oracle $Adj$. Suppose that  $Adj(v)$ does not
+  contain more than $\delta$ nodes for any $v\in V$. Then, if $t(f)$
+  and $t(Adj)$ are the times complexity for $f$ and $Adj$,
+  respectively, the time complexity of reverse search is of order of
+  magnitude, 
+  \begin{equation*}
+    \delta t(Adj)|V| + t(f)|E|.
+  \end{equation*}
 \end{theorem}
- 
-
-\section{Basic Concepts about Clustering}
-\label{sec:BasicConceptsClustering}
-For a set $S$ of $n$ points $\vec{p_i}\in \RR^d$, we denote by $|S|$ the number
-of point of $S$ and we define the mass center of $S$, $\massCenter{S}$,
-\begin{equation*}
-  \massCenter{S}=\frac{1}{|S|}\sum_{p_i\in S} \vec{p_i}.
-\end{equation*}
-The mass center is a central concept to measure the quality
-$S_1,\ldots, S_k$, a partition in subsets of $S$.
-\begin{definition}
-  The general $k-$clustering is a partition a given set $S\subset\RR^{d}$
-  of $n$ points $\vec{p_i}$, $i=1,\ldots, n$ into $k$ disjoint nonempty subsets
-  $S_1,\ldots, S_k$ called clusters. A variance-based $k-$clustering problem 
-  is to find $k$ clusters such that the following quantity is minimized,
-  \begin{equation*}
-    \text{Var}(S_1,\ldots, S_k)=\sum_{j=1}^{k}\frac{1}{|S_j|}
-    \sum_{\vec{p_i}\in S_j}\|\vec{p_i}-\massCenter{S_j}\|^2,
-  \end{equation*}
-  over all possible choices of $S_1,\ldots, S_k$.
-\end{definition}
-A common way to make a partition is using the concept of Voronoi diagrams, the idea
-behind it is to pick $k$ points $\vec{q_1},\ldots, \vec{q_k}$ and divide $S$ into 
-subsets $S_1,\ldots, S_k$ where each of the cluster $S_j$  is defined by 
-the points that are closest to the correspondent $\vec{q_j}$. Here, we give the 
-mathematical definition.
-\begin{definition}
-  Given $\vec{q_1},\ldots,\vec{q_k}\in\RR^{d}$ we define the Voronoi region
-  $\Voronoi{\vec{q_j}}$ by
-  \begin{equation*}
-    \Voronoi{\vec{q_j}}=\bigcap_{l=1}^{k}\{\vec{p}\in\RR^d : 
-    \|\vec{p}-\vec{q_j}\|^2< \|\vec{p}-\vec{q_l}\|^2\}.
-  \end{equation*}
-  A Voronoi partition $S_1,\ldots, S_k$ is defined as follows $\vec{p}\in S_{j}\iff 
-  \vec{p}\in\Voronoi{\vec{q_j}}.$
-\end{definition}
-
-
-\section{K-Clusters and Hyperplanes Arrangements}
-\label{sec:KClusterHyperplanesArrangements}
-Here, we revise the algorithm presented in~\cite{InabaKatohImai} to solve the 
-$k-$clustering problem under the variance criterion. This relays in the following 
-theorem first discovered by~\cite{MacQueen67}.
-\begin{theorem}
-  Suppose that $\{S_1^*,\ldots, S_{k}^*\}$ is an optimum
-  $k-$clustering, then an optimum $k-$clustering is a Voronoi partition for some
-  $k-$ points $\vec{q_j},\ j=1,\ldots,k.$
-\end{theorem}
-A similar result was also discovered for other measure $\text{Var}$, where the 
-partition is defined by a generalization of Voronoi partitions.
-Using the fact that the number of Voronoi partions can be bounded, 
-the authors of~\cite{InabaKatohImai}  proved the following result.
-\begin{theorem}{\cite[Theorem 3]{InabaKatohImai}}
-  \label{thm:inaba}
-  The number of Voronoi partitions of $n$ points by the Euclidean Voronoi diagram
-generated by $k$ points in $\RR^{d}$ is $O(n^{dk})$ and all the Voronoi partitions
-can be enumerated in $O(n^{dk+1})$ where the implied constants 
-depends on $d,k$.
-\end{theorem}
-The proof of this theorem relays in Theorems~\ref{thm:NumberCells} 
-and~\ref{thm:timeAlgCellEnum}. However, this result is not thigh,
-we show in the next theorem how to choose a better hyperplane arrangement
-in a lower dimension and obtain a more efficient algorithm in several interesting
-cases.
-\begin{theorem}
-  \label{thm:NumberVoronoiPartitions}
-  The number of Voronoi partitions of a set $S\subset\RR^d$ of $n$ points 
-  generated by $k$ points is $O(n^{(d+1)(k-1)})$, and all the Voronoi partitions
-  can be enumerated in $O(n^{(d+1)(k-1)+1})$
-\end{theorem}
-\begin{proof}
-  To ease the notation, we are going to represent  $\RR^{d(k-1)+k-1}$ as
-  \begin{equation*}
-    \RR^{(d+1)(k-1)}=\{(\vec{h_1},\ldots, \vec{h_{k-1}},z_1,\ldots,z_{k-1})\ | \ 
-    \vec{q_1},\ldots, \vec{q_k}\in\RR^d,\ z_1,\ldots,z_{k-1}\in\RR \}.
-  \end{equation*}
-  The idea is that we see as the product of several vector spaces. Now, it 
-  is clear what is meant by $\dotProd{\vec{h_1}}{\vec{p}}$, where $\vec{p}\in\RR^d$.
-
-  For a point $\vec{p}\in S$, consider in $\RR^{d(k-1)+k-1}$ the following sets of 
-  hyperplanes:
-  \begin{eqnarray*}
-    \H[\vec{p}]'&=&\{(\underbrace{\vec{0},\ldots,\vec{0}}_{i-1},2\vec{p},
-    \underbrace{\vec{0},\ldots,\vec{0}}_{k-i-1},\underbrace{0,\ldots,0}_{i-1},-1,
-    \underbrace{0,\ldots,0}_{k-i-1})\},\\
-    \H[\vec{p}]''
-    &=&\{\vec{h}-\vec{h'}\ |\ \vec{h},\vec{h'}\in\H',\ \vec{h}\neq\vec{h'}\},\\
-    \H[\vec{p}]&=&\H[\vec{p}]'\cup\H[\vec{p}]''.
-  \end{eqnarray*}
-  $\H[\vec{p}]$ contains at most $k^3$ hyperplanes. If we define
-  $\H$ as union of all $\H[\vec{p}]$, $\vec{p}\in S$, then the cardinality
-  of $\H$ is at most $nk^3$.
-  The hyperplane arrangement define by $\H$ contains $O(n^{(d+1)(k-1)})$ cells 
-  where the constant involve depends only on $k$ and $d.$ Now, we have to find the 
-  connection between the cells in the hyperplane arrangement and the Voronoi partitions
-  of $S$.
-  
-  Suppose that we have a Voronoi partition of $S$, given by $S_1,\ldots, S_k$.
-  Then, given $S_1,\ldots, S_k$ is equivalent to giving centroids $\vec{q_1},\ldots,\vec{q_k}$
-  which satisfies the following system of inequalities:
-  \begin{equation}
-    \label{eq:PolynomialSystem}
-    \|\vec{q_i}-\vec{p_l}\|^2<\|\vec{q_j}-\vec{p_l}\|^2,\quad \forall j\neq i\text{ if }\vec{p_l}\in S_i.
-  \end{equation}
-  We notice that the euclidean norm of a vector is exactly the standart dot product, so System~\eqref{eq:PolynomialSystem}
-  can be transformed into
-  \begin{equation*}
-    2\dotProd{\vec{p_l}}{(\vec{q_j}-\vec{q_i})}< \|\vec{q_j}\|^2-\|\vec{q_i}\|^2,\quad \forall j\neq i\text{ if }\vec{p_l}\in S_i, 
-  \end{equation*}
-  or equivalently
- \begin{equation}
-   \label{eq:linearSystem}
-    2\dotProd{\vec{p_l}}{(\vec{q_j}-\vec{q_1}+\vec{q_1}-\vec{q_i})}< \|\vec{q_j}\|^2-\|\vec{q_1}\|^2+\|\vec{q_1}\|^2-\|\vec{q_i}\|^2,
-    \quad \forall j\neq i\text{ if }\vec{p_l}\in S_i, 
-  \end{equation}
-  This implies that the following point 
-  $$
-  (\vec{q_2}-\vec{q_1},\ldots,\vec{q_k}-\vec{q_1},\|\vec{q_2}\|^2-\|\vec{q_1}\|^2,\ldots, \|\vec{q_k}\|^2-\|\vec{q_1}\|^2)
-  $$
-  is an interior point of one of the cells of the hyperplane arrangement. Systems~\eqref{eq:PolynomialSystem} and \eqref{eq:linearSystem}
-  are defined using only $S_1,\ldots, S_k$ which means that any other set of centroids will define an interior point in the same cell.
-
-  Giving an interior point of a cell, it is also trivial to find the partition which defines, just solving the following 
-  linear system of linear equations,
-  \begin{eqnarray*}
-    \vec{q_2}-\vec{q_1}&=&\vec{h_1},\\
-    \ldots &=&\ldots,\\
-    \vec{q_k}-\vec{q_1}&=&\vec{h_{k-1}},\\
-    2\dotProd{\vec{h_1}}{\vec{q_1}}&=&z_1-\|\vec{h_1}\|^2,\\
-    \ldots &=&\ldots,\\
-    2\dotProd{\vec{h_{k-1}}}{\vec{q_{k-1}}}&=&z_{k-1}-\|\vec{h_{k-1}}\|^2.\\
-  \end{eqnarray*}
-  However, it is also possible to use the sign vectors of the cells. A sign vector 
-  defines trivially  sets $S_1,\ldots, S_k$.
-  This remark finishes the proof.
-\end{proof}
-This result gives a better bound than \cite[Theorem 3]{InabaKatohImai} if $d>k$, thus, finding 
-all the cells in the hyperplane arrangement is easier in this case. 
-In the following subsection, we study several cases and propose several improvements.
-
-\subsection{Clustering in one dimension}
-\label{sec:subsecOneDimension}
-
-Solving $k-$clustering problem can be done efficiently when $d=1$. The result follows from 
-the following lemma.
-\begin{lemma}
-\label{lem:CountingKClustering}
-  The number of Voronoi partitions of a set $S\subset\RR$ of $n$ points 
-  generated by $k$ points is $O(n^{(k-1)})$, and all the Voronoi partitions
-  can be enumerated in $O(n^{(k-1)})$ where the constant depends on $k$. Therefore,
-  the optimum $k-$clustering of $S$ can be found in $O(n^{(k-1)})$ operations.
-\end{lemma}
-\begin{proof}
-  By the definition of Voronoi partition, it is easy that each $S_1,\ldots, S_k$ is 
-  defined by its maximum and minimum element. The reason is  Voronoi regions 
-  are convex regions, so if two points belong to a Voronoi region, then the line
-  that connects the points belongs to the Voronoi region.
-  
-  Notice also, that the set $S$ has a minimum value, so this value has to be in 
-  one of the partitions. Without losing any generality, suppose that it is in the 
-  first one, since the order of the sets $S_1,\ldots, S_k$ is irrelevant for the 
-  partition.
-  
-  Fixing the minimum of each $S_2,\ldots, S_k$, fix the partition. The reason is
-  that the the maximum of $S_1$ is given by the following formula:
-  \begin{equation*}
-    \max S_1=\max\{s\in S\ |\ s\le\min_{j=2,\ldots,k} S_j\}.
-  \end{equation*}
-  To recover $S_2,\ldots, S_k$, it is only necessary to apply the same
-  reasoning to $S'=S_2\cup\ldots\cup S_k$. The number of choices for the minimum is
-  exactly the number of sets of $k$ elements of $S$, which is
-  $O(n^{k-1})$ and enumerating the sets is trivial. This remark finishes the proof.
-\end{proof}
-
-\subsection{The 2-Clustering Problem}
-\label{sec:sub2Clustering}
-
-Here we take a closer look to the case $k=2$ and we find that the number of cells
-is indeed $O(n^{d})$. This formula generalizes Lemma~\ref{lem:CountingKClustering}
-for $k=2$.
-\begin{lemma}
-  Given a Voronoi partition of $S$, $S_1,\ S_2$ defined by  
-  $\vec{q_1},\ \vec{q_2}\in\RR^d$ there exists $\vec{q_3},\vec{q_4}\in\RR^d$ 
-  such that they define the same Voronoi partition and  
-  $\|\vec{q_3}\|^2-\|\vec{q_4}\|^2=1$.
-\end{lemma}
-\begin{proof}
-  Clearly, $\vec{q_1},\vec{q_2}$ sadisfy System~\eqref{eq:PolynomialSystem} for an
-  appropiate choice of inequalities and any pair $\vec{q_4}$ and $\vec{q_3}$ which 
-  satisfy the same system, define the same partition. 
-
-  With out loss of generality we can suppose that $\|\vec{q_1}\|\neq \|\vec{q_2}\|$,
-  in other case, change $\|\vec{q_1}\|$ by an small amount in any of its components.
-  Also, we suppose that $\|\vec{q_1}\|\le \|\vec{q_2}\|$ because permuting
-  $\vec{q_1}$ and $\vec{q_2}$ give the same partition. Under these conditions,
-  $\vec{q_3},\vec{q_4}$ define the same partition, where 
-  \begin{equation*}
-    \vec{q_3}=\frac{\vec{q_1}}{\|\vec{q_2}\|^2-\|\vec{q_1}\|^2},\quad     
-    \vec{q_4}=\frac{\vec{q_2}}{\|\vec{q_2}\|^2-\|\vec{q_1}\|^2}.
-  \end{equation*}
-  This finishes the proof.
-\end{proof}
-Now, we can apply this result for a better algorithm to find all posible 
-Voronoi partitions when $k=2.$
-\begin{theorem}
-  \label{lemma:NumberVoronoiPartitionsk2}
-  The number of Voronoi partitions of a set $S\subset\RR^d$ of $n$ points 
-  generated by $2$ points is $O(n^{d})$, and all the Voronoi partitions
-  can be enumerated in $O(n^{(d+1)})$.
-\end{theorem}
-\begin{proof}
-The proof of Theorem~\ref{thm:NumberVoronoiPartitions} applies, 
-substituing in System~\eqref{eq:linearSystem} $\|\vec{q_2}\|^2-\|\vec{q_1}\|^2=1$.
-the hyperplane arrangement lives in $\RR^{d}$. Therefore,  applying  
-Theorems~\ref{thm:NumberCells} and~\ref{thm:timeAlgCellEnum} gives that the 
-number of cells is $O(n^{d})$ and can be enumerated in $O(n^{(d+1)})$ where the implied
-constants depends only on the dimension.
-\end{proof}
-
-\subsection{ Improvement over the Algorithm to 
-  Enumerate Voronoi Partitions}
-
-The following is an asymptotic improvement for the algorithm in the case that 
-$d\le k=3$. In this case, by Theorem~\ref{thm:inaba}, there are 
-$O(n^{3d})$ cells and the number of operations required to enumerate them 
-is $O(n^{3d+1})$. Here we show how to reduce the time to enumerate all the cells.
-\begin{lemma}
-  All the Voronoi partitions of a set $S\subset\RR^d$ of $n$ points generated 
-  by three centroids can be enumerated in $O(n^{3d})$ time.
-\end{lemma}
-\begin{proof}
-  The idea is to use Lemma~\ref{lemma:NumberVoronoiPartitionsk2} to generate all
-  possible $2-$clusters and  mixed them to recover all possible $3-$partitions.
-  The sign vectors are fundamental in this task, because they show which 
-  $3-$clusterings are possible.
-
-  To give a $k-$clustering is equivalent to give the sign vector of a cell of an 
-  hyperplane arrangement, i. e. 
-  \begin{equation*}
-    2\dotProd{\vec{p_l}}{(\vec{q_j}-\vec{q_i})}< z_{j,i}
-    =\|\vec{q_j}\|^2-\|\vec{q_i}\|^2,\quad \forall j\neq i\text{ if }\vec{p_l}\in S_i, 
-  \end{equation*}
-  Let $\vec{Q}=(\vec{q_2}-\vec{q_1},z_{2,1},
-  \vec{q_3}-\vec{q_1},z_{3,1},\vec{q_3}-\vec{q_2},z_{3,2})$, then the 
-  sign vector $    \sv{\vec{Q}}{}$ is,
-  \begin{equation*}
-    \sv{\vec{Q}}{}=(\SV{(\vec{q_2}-\vec{q_1},z_{2,1})}{},
-    \SV{(\vec{q_2}-\vec{q_1},z_{2,1})}{},\SV{(\vec{q_2}-\vec{q_1},z_{2,1})}{})
-  \end{equation*}
-  where $\SV{}{}$ is the sign vector referring to the hyperplane arrangement
-  defined by the following set of hyperplanes,
-  \begin{equation*}
-    \H=\{\ (2\vec{p},-1)\ |\ \vec{p}\in S\ \}.
-  \end{equation*}
-  By Lemma~\ref{lemma:NumberVoronoiPartitionsk2}, the number of cells is $O(n^d)$ and 
-  can be enumerated in $O(n^{(d+1)}$ time. So, using all possible combinations
-  of this cells can be done in time $O(n^{3d})$. This finishes the proof.
-\end{proof}
+\bibliographystyle{plain}
+\bibliography{bibliography}
+\end{document}
 
 
 %%% Local Variables: 
