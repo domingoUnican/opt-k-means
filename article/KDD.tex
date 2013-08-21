@@ -53,20 +53,24 @@ We will need the following concepts from topology:
 \item   Given $\vec{a}\in\RR^d-\{\vec{0}\}$ and $b\in\RR$, the set 
   $\cH = \{\vec{x}\in\RR^d : \transpose{\vec{a}}\vec{x}=b\}$ is called
   a hyperplane.
-\item A point $\vec{p}\in\RR^{d}$ lies in the \textit{left side} of
+\item A point $\vec{p}\in\RR^{d}$ lays in the \textit{left side} of
   hyperplane $\cH$ if $\transpose{\vec{a}}\vec{p}>b$. If 
-  $\transpose{\vec{a}}\vec{p} < b$, the point $\vec{p}$ lies  in the
+  $\transpose{\vec{a}}\vec{p} < b$, the point $\vec{p}$ lays  in the
   \textit{right side} of hyperplane $\cH$.
 \item An hyperplane $\cH$ \textit{separates} two sets $\Set,\
-  \Set'\subset\RR^d$ if all the points in $\Set$ lies in the left side
-  of $\cH$ and all the points in $\Set'$ lies in the right side of $\cH$.
+  \Set'\subset\RR^d$ if all the points in $\Set$ lays in the left side
+  of $\cH$ and all the points in $\Set'$ lays in the right side of
+  $\cH$.
+\item An hyperplane $\cH$ \textit{splits} a set $\Set$ if any point
+  $\vec{p}\in\Set$ lays in the right or the left side of $\cH$. 
 \end{itemize}
-We cite here  the maximum separation hyperplane.
+We cite here  the separating hyperplane theorem, 
+see~\cite[page 46]{BoydLieven04} for a proof. 
 \begin{lemma}
   \label{lem:maximum_separation}
-  For any two convex sets $\Set,\ \Set'\subset \RR^d$ such that $\Set\cap \Set' =
-  \emptyset$,  there exists an   hyperplane $\cH$ that separates
-  $\Set$ and $\Set'$.
+  For any two convex sets $\Set,\ \Set'\subset \RR^d$ such that
+  $\Set\cap \Set' =  \emptyset$,  there exists an   hyperplane $\cH$
+  that separates $\Set$ and $\Set'$.
 \end{lemma}
 
 As it was stated before, it is known that one optimal partition is defined using
@@ -118,7 +122,7 @@ problem,
   Suppose that $G = (V, E)$ be an undirected graph, where $V$ is a set
   of vertex and $E$ is the edge set. Enumerate all the elements in $V$. 
 \end{problem}
-The difficulty of this particular problem lies in the fact that $V$
+The difficulty of this particular problem lays in the fact that $V$
 is  not given explicitly, however given a node $v\in V$ it is possible
 to calculate its neighbors.
 
@@ -220,6 +224,112 @@ The complexity of the algorithm is given in~\cite[Theorem
     \delta t(Adj)|V| + t(f)|E|.
   \end{equation*}
 \end{theorem}
+
+\subsection{Reverse search for two clustering problem}
+\label{sec:two_clusters}
+For the two clustering problem, we are going to adapt the scheme
+presented in the previous section. For that, we need to define the
+following objects:
+\begin{itemize}
+\item the graph $G = (V, E)$,
+\item a local search $(G, R, f)$,
+\item an adjacency oracle $Adj$.
+\end{itemize}
+$V$ is a complete description of all possible ways to split $\Set$ by
+hyperplanes.
+The set $V$ is going to be a set of hyperplanes satisfying two
+properties:
+\begin{itemize}
+\item each of the hyperplanes splits the set $\Set$ in a different
+  way.
+\item If $\Set_1$ and $\Set_2$ is a partition of $\Set$ and $\Set_1$
+  and $\Set_2$ are convex, then there exists an hyperplane $\cH\in V$
+  which separates $\Set_1$ and $\Set_2$.
+\end{itemize}
+In other words,  $V$ is a set of representatives of all possible
+two-clusters. 
+
+Now, we define the set $E$ implicitly by defining when two nodes are
+neighbors. 
+Two hyperplanes $\cH,\cH'\in V$ are neighbours if and
+only if the points of $\Set$ that  lay in the left side of $\cH$ are
+exactly the points that lay in the left side of $\cH$, except for one
+point in $\Set$. Informally, two nodes are neighbors if the partitions they
+defined are the same except from one point.
+
+\subsubsection{Local search}
+\label{sec:sub_local_search}
+The local search is an important part in the efficiency of the
+algorithm. For the rest of the paper, we suppose that points in $\Set$
+are ordered, so $\Set = \{\vec{p}_1,\ldots,\vec{p}_n \}$. One possible
+local search function is given in Algorithm~\ref{alg:naive}.
+ \begin{algorithm}
+  \caption{naive local search function f}
+  \label{alg:naive}
+  \begin{algorithmic}
+  \REQUIRE an hyperplane $\cH$
+  \STATE Let $\Set_1$ and $\Set_2$ the partition defined by $\cH$
+  \FORALL{$\vec{p}$ in $\Set_2$}
+  \IF{There exists an hyperplane $\cH'$ that separate $\Set_1\cup
+    \{\vec{p}\}$ and $\Set_2 -\{\vec{p}\}$}
+  \RETURN $\cH'$
+  \ENDIF
+  \ENDFOR
+  \RETURN $\cH$
+  \end{algorithmic}
+\end{algorithm}
+The set $R = \{\vec{r}\}$ contains only an hyperplane $\vec{r}$ with
+the property that all the points lay in the left side of this
+hyperplane.
+
+The problem with this proposal is that it is necessary to find an
+hyperplanes that separates two sets of points and this can be quite
+expensive, see~\cite{Elizondo06}. 
+We adapt the proposal for the local search $(G, R, f)$ 
+in~\cite{SleumerMsc} because it is more efficient and only requires to
+find a separating hyperplane. Unlike Algorithm~\ref{alg:naive}, this
+local search function depends on $\vec{r}$.
+\begin{algorithm}
+  \caption{local search function f}
+  \label{alg:sleumer}
+  \begin{algorithmic}
+  \REQUIRE an hyperplane $\cH$ and $\vec{r}$
+  \STATE $\vec{p}_{min}=\vec{p}_1$
+  \FORALL{$\vec{p_k}$  in $\Set$}
+  \IF{$\vec{p}_k$==$MinDistance(\vec{p}_{min}, \vec{p}_k,\cH,\vec{r})$}
+  \STATE $\vec{p}_{min}=\vec{p}_1$
+  \ENDIF
+  \ENDFOR
+  \STATE Let $\Set_1$ be the points laying at the left side of $\cH$ 
+  \STATE Let $\Set_2$ be the points laying at the right side of $\cH$
+  \RETURN An hyperplane separating $\Set_1\cup \{\vec{p}_{min}\}$ and 
+  $\Set_2 - \{\vec{p}_{min}\}$
+  \end{algorithmic}
+\end{algorithm}
+Although in a   cryptic way, this function takes the point in the right
+side of $\cH$ that is the closest to hyperplane $\cH$ and then search
+for an hyperplane that separates the points of left side plus this
+one and the ones in the right side minus this point.
+\begin{algorithm}
+  \caption{Algorithm MinDistance}
+  \begin{algorithmic}
+  \REQUIRE Two hyperplanes $h_1,h_2$ and two different points $\vec{p},\vec{r}$
+  \ENSURE the hyperplane which intersects the segment closest to $\vec{p}$ 
+  \STATE
+  \begin{equation*}
+    c_1=\frac{-\dotProd{h_1}{\vec{p}}}{\dotProd{h_1}{(\vec{r}-\vec{p})}},
+    \quad c_2=\frac{-\dotProd{h_2}{\vec{p}}}{\dotProd{h_2}{(\vec{r}-\vec{p})}}
+  \end{equation*}
+  \IF {$c_1>c_2$}
+  \STATE return $h_2$
+  \ELSIF{$c_1<c_2$}
+  \STATE return $h_1$
+  \ELSE
+  \STATE returns the minimum of $-h_1/\dotProd{h_1}{\vec{p}}$ and 
+  $-h_2/\dotProd{h_2}{\vec{p}}$ by the lexicographic order.
+  \ENDIF
+  \end{algorithmic}
+\end{algorithm} 
 \bibliographystyle{plain}
 \bibliography{bibliography}
 \end{document}
