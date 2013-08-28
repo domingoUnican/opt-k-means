@@ -313,12 +313,14 @@ one and the ones in the right side minus this point.
 \begin{algorithm}
   \caption{Algorithm MinDistance}
   \begin{algorithmic}
-  \REQUIRE Two hyperplanes $h_1,h_2$ and two different points $\vec{p},\vec{r}$
+  \REQUIRE Two hyperplanes $h_1,h_2$ and two different 
+  points $\vec{p},\vec{r}$
   \ENSURE the hyperplane which intersects the segment closest to $\vec{p}$ 
   \STATE
   \begin{equation*}
     c_1=\frac{-\dotProd{h_1}{\vec{p}}}{\dotProd{h_1}{(\vec{r}-\vec{p})}},
-    \quad c_2=\frac{-\dotProd{h_2}{\vec{p}}}{\dotProd{h_2}{(\vec{r}-\vec{p})}}
+    \quad c_2=
+    \frac{-\dotProd{h_2}{\vec{p}}}{\dotProd{h_2}{(\vec{r}-\vec{p})}}
   \end{equation*}
   \IF {$c_1>c_2$}
   \STATE return $h_2$
@@ -330,6 +332,22 @@ one and the ones in the right side minus this point.
   \ENDIF
   \end{algorithmic}
 \end{algorithm} 
+
+\subsubsection{The adjacency oracle}
+
+The adjacency oracle is just an algorithm which that returns which
+partitions are adjacents. Two partitions are adjacent if they differ
+in only one point. This is equivalent to give which points are
+vertices of the convex hull of each of the clusters. 
+To know if a point is a vertices of the convex hull, it is only to 
+solve the following linear program,
+\begin{eqnarray*}
+  \text{maximize }&\dotProd{\vec{p}}{\vec{x}},\\
+  \text{subject to}&\dotProd{\mat{A}}{\vec{x}}\le \vec{b},\\
+  &\dotProd{\vec{p}}{\vec{x}}\le t+1.\\
+\end{eqnarray*}
+If the value is strictly greater than $t$, then the point is a
+vertices of the convex hull.
 \bibliographystyle{plain}
 \bibliography{bibliography}
 \end{document}

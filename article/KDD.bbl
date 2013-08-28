@@ -1,0 +1,61 @@
+\begin{thebibliography}{10}
+
+\bibitem{arthurVas07}
+David Arthur and Sergei Vassilvitskii.
+\newblock k-means++: the advantages of careful seeding.
+\newblock In {\em Proceedings of the eighteenth annual ACM-SIAM symposium on
+  Discrete algorithms}, SODA '07, pages 1027--1035, Philadelphia, PA, USA,
+  2007. Society for Industrial and Applied Mathematics.
+
+\bibitem{AvisFukuda}
+David Avis and Komei Fukuda.
+\newblock Reverse search for enumeration.
+\newblock {\em Discrete Applied Mathematics}, 65:21--46, 1993.
+
+\bibitem{BoydLieven04}
+Stephen Boyd and Lieven Vandenberghe.
+\newblock {\em {Convex Optimization}}.
+\newblock Cambridge University Press, 2004.
+
+\bibitem{Cormen}
+Thomas~H. Cormen, Charles~E. Leiserson, Ronald~L. Rivest, and Clifford Stein.
+\newblock {\em Introduction to algorithms}.
+\newblock MIT Press, Cambridge, MA, third edition, 2009.
+
+\bibitem{Elizondo06}
+David~A. Elizondo.
+\newblock The linear separability problem: some testing methods.
+\newblock {\em IEEE Transactions on Neural Networks}, 17(2):330--344, 2006.
+
+\bibitem{Lloy82}
+Stuart~P. Lloyd.
+\newblock Least squares quantization in {PCM}.
+\newblock {\em IEEE Transactions on Information Theory}, 28(2):129--137, March
+  1982.
+
+\bibitem{MacQ67}
+James~B. MacQueen.
+\newblock Some methods for classification and analysis of multivariate
+  observations.
+\newblock In {\em Proceedings of the 5th Berkeley Symposium on Mathematical
+  Statistics and Probability}, volume~1, pages 281--297. University of
+  California Press, 1967.
+
+\bibitem{RussellNorvig}
+Stuart~J. Russell and Peter Norvig.
+\newblock {\em Artificial Intelligence - A Modern Approach (3. internat. ed.)}.
+\newblock Pearson Education, 2010.
+
+\bibitem{SleumerMsc}
+Nora~H. Sleumer.
+\newblock Hyperplane arrangements: Construction, visualization and
+  applications.
+\newblock Master's thesis, Swiss Federal Institute of Technology, 2000.
+
+\bibitem{ZhangXia09}
+Chen Zhang and Shixiong Xia.
+\newblock {K}-means clustering algorithm with improved initial center.
+\newblock In {\em Knowledge Discovery and Data Mining, 2009. WKDD 2009. Second
+  International Workshop on}, pages 790 --792, jan. 2009.
+
+\end{thebibliography}
