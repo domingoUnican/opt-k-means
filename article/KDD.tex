@@ -31,17 +31,19 @@ we will call  ``$\k$-means globally optimum clustering''.
 \end{definition}
 It is well known that, given $\Set$, there always exists
 $\vec{q_1},\ldots, \vec{q_k}$ such that the partition defined as,
-\begin{equation*}
-  \Set_j=\bigcap_{l=1}^{k}\{\vec{p}\in\Set\ :\ 
-  \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
-\end{equation*}
-is an optimal partition.\footnote{Using this definition it could be
-  that one point belong to more than one clusters. Fortunately, it is
-  always possible to solve the ties in a reasonable manner}
+\begin{multline*}
+  \Set_j=\{\vec{p}\in\Set\ :\ 
+  \|\vec{p}-\vec{q_j}\|^2< \|\vec{p}-\vec{q_l}\|^2,\; l =1,\ldots, j-1\\
+  \text{ and }
+  \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_i}\|^2,\; i =j,\ldots, k \},
+\end{multline*}
+is an optimal partition.
 Indeed, the common approach to attack this problem is to use 
-\textit{Lloyd's heuristic}~\cite{Lloy82}, which was first used
-in~\cite{MacQ67} and, under minor modifications, performs quite well
-in practice, see~~\cite{arthurVas07,ZhangXia09}.
+\textit{Lloyd's heuristic}~\cite{Lloy82}, which basically tries to find 
+$\vec{q_1},\ldots, \vec{q_k}$ through an iterative process.
+Although the standard algorithm was presented in ~\cite{Lloy82},
+the term $k-$means was first used in~\cite{MacQ67}  and, under minor
+modifications, performs quite well in practice, see~~\cite{arthurVas07,ZhangXia09}.
 
 We will need the following concepts from topology:
 \begin{itemize}
@@ -49,7 +51,7 @@ We will need the following concepts from topology:
   pair of points within the set, every point in the straight line
   segment that joins them is also within the object.
 \item Given a set of points $\Set\subset\RR^{d}$, the convex hull of $\Set$ is the
-  smallest set of $\RR^{d}$ which contains $\Set$.
+  smallest convex set of $\RR^{d}$ which contains $\Set$.
 \item   Given $\vec{a}\in\RR^d-\{\vec{0}\}$ and $b\in\RR$, the set 
   $\cH = \{\vec{x}\in\RR^d : \transpose{\vec{a}}\vec{x}=b\}$ is called
   a hyperplane.
@@ -58,8 +60,8 @@ We will need the following concepts from topology:
   $\transpose{\vec{a}}\vec{p} < b$, the point $\vec{p}$ lays  in the
   \textit{right side} of hyperplane $\cH$.
 \item An hyperplane $\cH$ \textit{separates} two sets $\Set,\
-  \Set'\subset\RR^d$ if all the points in $\Set$ lays in the left side
-  of $\cH$ and all the points in $\Set'$ lays in the right side of
+  \Set'\subset\RR^d$ if  the points in $\Set$ lays in the same side
+  of $\cH$ and none the points in $\Set'$ lays in this side of
   $\cH$.
 \item An hyperplane $\cH$ \textit{splits} a set $\Set$ if any point
   $\vec{p}\in\Set$ lays in the right or the left side of $\cH$. 
@@ -73,17 +75,20 @@ see~\cite[page 46]{BoydLieven04} for a proof.
   that separates $\Set$ and $\Set'$.
 \end{lemma}
 
-As it was stated before, it is known that one optimal partition is defined using
-$k$ centroids. Partitions defined by centroid have a very interesting
-property.
+As it was stated before, it is known that one optimal partition can be
+defined using 
+$k$ points of $\RR^d$, called \textit{centroids}. Partitions using
+centroids have a very interesting property.
 \begin{lemma}
-  Given a set of point $\Set\subset \RR^{d}$ and centroids
+  Given a set of point $\Set\subset \RR^{d}$ and
   $\vec{q_1},\ldots,\vec{q_k}\in\RR^d$, the partition $\Set_1,\ldots,
   \Set_k$ defined as 
-  \begin{equation*}
-    \Set_j=\bigcap_{l=1}^{k}\{\vec{p}\in\Set\ :\ 
-    \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
-  \end{equation*}
+  \begin{multline*}
+  \Set_j=\{\vec{p}\in\Set\ :\ 
+  \|\vec{p}-\vec{q_j}\|^2< \|\vec{p}-\vec{q_l}\|^2,\; l =1,\ldots, j-1\\
+  \text{ and }
+  \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_i}\|^2,\; i =j,\ldots, k \},
+  \end{multline*}
   for $j = 1,\ldots, k$ satisfies:
   \begin{itemize}
   \item the intersection of the convex hull of any two different
@@ -93,30 +98,49 @@ property.
   \end{itemize}
 \end{lemma}
 \begin{proof}
-  The first assertion of the lemma is proved by induction. For $k=2$,
-  it is trivial. The general case is done noting that the intersection
+  The first assertion of the lemma is proved by induction on $k$. For
+  $k=2$, consider the following sets,
+  \begin{equation*}
+    \bSet_1 = \{\vec{p}\in\RR^{d}\; :\;  \|\vec{p}-\vec{q_1}\|^2\le
+    \|\vec{p}-\vec{q_2}\|^2\},\quad
+     \bSet_2 = \{\vec{p}\in\RR^{d}\; :\;  \|\vec{p}-\vec{q_1}\|^2>
+    \|\vec{p}-\vec{q_2}\|^2\}.
+  \end{equation*}
+  It is trivial that both sets are convex, the intersection is empty
+  and they contain 
+  $\Set_1,\Set_2$, respectively. By the definition of convex hull,
+  $\bSet_1,\bSet_2$ must contain the convex hull of
+  $\Set_1,\Set_2$ and this finishes the proof for $k=2$.
+
+  The general case is proved in a similar way  noting that the intersection
   of two convex sets is a convex set. So, the convex hull of 
-  \begin{equation*}
-    \Set_j=\bigcap_{l=1}^{k}\{\vec{p}\in\Set\ :\ 
-    \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
-  \end{equation*}
-  is just the intersection of the convex hulls of 
-  \begin{equation*}
-    \{\vec{p}\in\Set\ :\ 
-    \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_l}\|^2\},
-  \end{equation*}
-  for $l\neq j$, which are disjoint by induction.
+  \begin{multline*}
+  \Set_j=\{\vec{p}\in\Set\ :\ 
+  \|\vec{p}-\vec{q_j}\|^2< \|\vec{p}-\vec{q_l}\|^2,\; l =1,\ldots, j-1\\
+  \text{ and }
+  \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_i}\|^2,\; i =j,\ldots, k \},
+  \end{multline*}
+  is contained in the following set
+  \begin{multline*}
+    \bSet_j=\{\vec{p}\in\RR^{d}\ :\
+    \|\vec{p}-\vec{q_j}\|^2< \|\vec{p}-\vec{q_l}\|^2,\; l =1,\ldots, j-1\\
+    \text{ and } \|\vec{p}-\vec{q_j}\|^2\le \|\vec{p}-\vec{q_i}\|^2,\;
+    i =j,\ldots, k \}.
+  \end{multline*}
+  Again, it is easy to check that $\bSet_j\cap \bSet_l=\emptyset$ for
+  $l\neq j$ and each of these sets can be put as an intersection of
+  convex sets. The rest of the proof of this item is straightforward.
 
   The second assertion is a direct application of
-  Lemma~\ref{lem:maximum_separation} and that $\Set_i, \Set_j$ are
-  convex sets. 
+  Lemma~\ref{lem:maximum_separation} and that $\bSet_j$ is a family of
+  convex sets with empty intersection.
 \end{proof}
 
 \section{Reverse Enumeration}
 \label{sec:reverse_enumeration}
-Reverse Enumeration is a method for enumerating element in a set. It
-was introduced in~\cite{AvisFukuda} which solves the following
-problem,
+Reverse Enumeration is a method for listing objects that satisfy a
+specific property. It was introduced in~\cite{AvisFukuda} to solve
+the following problem,
 \begin{problem}
   \label{prob:traversal}
   Suppose that $G = (V, E)$ be an undirected graph, where $V$ is a set
@@ -127,15 +151,13 @@ is  not given explicitly, however given a node $v\in V$ it is possible
 to calculate its neighbors.
 
 The problem of graph traversal is well-known, and there are 
-well-known algorithms like breadth-first search and depth-first
+several algorithms like breadth-first search and depth-first
 search, see~\cite[Page 597]{Cormen}. 
 
 Unfortunately, these algorithms needs to mantain a data 
 structure with all the nodes that have been visited in order to avoid
-looping endlessly because of  cycles in the graph. This implies a big
-drawback. % Also, the complexity of these algorithms depends on the
-% cardinality of the set of edges, \textbf{instead} of depending only on
-% the number of nodes.
+looping endlessly in a cycle of the graph. This implies a big
+drawback in terms of memory usage. 
   
 For introducing a more efficient way of solving
 Problem~\ref{prob:traversal} we need to introduce the definition of
@@ -145,14 +167,16 @@ Problem~\ref{prob:traversal} we need to introduce the definition of
   is  a mapping $f: V\mapsto V$ with the following properties:
   \begin{itemize}
   \item $(v,f(v))$ is an edge of the graph for $v\in V- R$,
-  \item for all $v\in  V- R$, there exists a positive integer $t$ such
+  \item for all $v\in  V- R$, there exists a positive integer $t$
+    depending on $v$ such
     that $f^{t}(v)\in R$.
   \end{itemize}
-  The function $f$ is said to be the \textit{local search function}
-  and $G$ the \textit{underlaying graph structure}.
+  The function $f$ is said to be the \textit{local search function}, 
+  $R$  the set of solutions
+  and $G$  the \textit{underlaying graph structure}.
 \end{definition}
 Informally a local search algorithm is a way of explore a
-graph in a non systematic way, starting in any candidate and heading
+graph in a  non systematic way, starting in any candidate and heading
 for the set of solutions $R$,  see~\cite[Page 110]{RussellNorvig} for
 a more detailed exposition.  
 
@@ -168,8 +192,11 @@ cycles.
 
 So, most efficient way to output all the component is to traverse all
 the components of $T$, starting at every element of $R$. 
-However, for a local search function $f$ is normally difficult to find
-the preimages of a node $v$. In most of the cases, there is an 
+However, to do so, it is necessary to invert $f$, i. e. 
+given $v$, find all the elements $v'$, such that $f(v')=v$. For a
+general local search function $f$ is normally difficult to find 
+the preimages of a node $v$. In most of the cases where reverse
+enumeration is useful, there is an 
 \textit{adjacency oracle} which gives the neighbours of a node. The
 original definition can be found in~\cite{AvisFukuda}, but here we
 simplify it for our purposes. 
@@ -224,11 +251,13 @@ The complexity of the algorithm is given in~\cite[Theorem
     \delta t(Adj)|V| + t(f)|E|.
   \end{equation*}
 \end{theorem}
-
+In the next subsections, we show how to apply reverse search for the
+problem of enumerating all possible partitions defined by centroids.
 \subsection{Reverse search for two clustering problem}
 \label{sec:two_clusters}
-For the two clustering problem, we are going to adapt the scheme
-presented in the previous section. For that, we need to define the
+In order  to adapt reverse
+search for the problem of enumerating all possible partitions defined
+by two clusters, we need to define the
 following objects:
 \begin{itemize}
 \item the graph $G = (V, E)$,
@@ -237,21 +266,22 @@ following objects:
 \end{itemize}
 $V$ is a complete description of all possible ways to split $\Set$ by
 hyperplanes.
-The set $V$ is going to be a set of hyperplanes satisfying two
+It is represented by a set of hyperplanes satisfying two
 properties:
 \begin{itemize}
 \item each of the hyperplanes splits the set $\Set$ in a different
   way.
-\item If $\Set_1$ and $\Set_2$ is a partition of $\Set$ and $\Set_1$
-  and $\Set_2$ are convex, then there exists an hyperplane $\cH\in V$
+\item If $\Set_1$ and $\Set_2$ is a partition of $\Set$ and the
+  intersection of the convex hulls of $\Set_1$
+  and $\Set_2$ is empty, then there exists an hyperplane $\cH\in V$
   which separates $\Set_1$ and $\Set_2$.
 \end{itemize}
-In other words,  $V$ is a set of representatives of all possible
-two-clusters. 
+In other words, $V$ is a set of representatives of all possible
+partitions into two clusters given by hyperplanes. 
 
 Now, we define the set $E$ implicitly by defining when two nodes are
 neighbors. 
-Two hyperplanes $\cH,\cH'\in V$ are neighbours if and
+Two hyperplanes $\cH,\cH'\in V$ are neighbours in graph $G$ if and
 only if the points of $\Set$ that  lay in the left side of $\cH$ are
 exactly the points that lay in the left side of $\cH$, except for one
 point in $\Set$. Informally, two nodes are neighbors if the partitions they
