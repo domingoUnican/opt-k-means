@@ -15,7 +15,9 @@
      '("transpose" 1)
      '("mat" 1)
      "RR"
-     "Set")
+     "Set"
+     "bSet"
+     "cR")
     (TeX-run-style-hooks
      "amsthm"
      "amssymb"

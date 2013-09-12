@@ -308,13 +308,13 @@ local search function is given in Algorithm~\ref{alg:naive}.
   \RETURN $\cH$
   \end{algorithmic}
 \end{algorithm}
-The set $R = \{\vec{r}\}$ contains only an hyperplane $\vec{r}$ with
+The set $R = \{\cR\}$ contains only an hyperplane $\cR$ with
 the property that all the points lay in the left side of this
 hyperplane.
 
 The problem with this proposal is that it is necessary to find an
 hyperplanes that separates two sets of points and this can be quite
-expensive, see~\cite{Elizondo06}. 
+expensive in term of time, see~\cite{Elizondo06}. 
 We adapt the proposal for the local search $(G, R, f)$ 
 in~\cite{SleumerMsc} because it is more efficient and only requires to
 find a separating hyperplane. Unlike Algorithm~\ref{alg:naive}, this
@@ -323,7 +323,9 @@ local search function depends on $\vec{r}$.
   \caption{local search function f}
   \label{alg:sleumer}
   \begin{algorithmic}
-  \REQUIRE an hyperplane $\cH$ and $\vec{r}$
+  \REQUIRE An hyperplane $\cH$ which separates $\Set$ and the
+  hyperplane $\cR$
+  \ENSURE An hyperplane $\cH'$ which splits $\Set$
   \STATE $\vec{p}_{min}=\vec{p}_1$
   \FORALL{$\vec{p_k}$  in $\Set$}
   \IF{$\vec{p}_k$==$MinDistance(\vec{p}_{min}, \vec{p}_k,\cH,\vec{r})$}
