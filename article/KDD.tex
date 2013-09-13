@@ -53,11 +53,11 @@ We will need the following concepts from topology:
 \item Given a set of points $\Set\subset\RR^{d}$, the convex hull of $\Set$ is the
   smallest convex set of $\RR^{d}$ which contains $\Set$.
 \item   Given $\vec{a}\in\RR^d-\{\vec{0}\}$ and $b\in\RR$, the set 
-  $\cH = \{\vec{x}\in\RR^d : \transpose{\vec{a}}\vec{x}=b\}$ is called
+  $\cH = \{\vec{x}\in\RR^d : \dotProd{\vec{a}}{\vec{x}}=b\}$ is called
   a hyperplane.
 \item A point $\vec{p}\in\RR^{d}$ lays in the \textit{left side} of
-  hyperplane $\cH$ if $\transpose{\vec{a}}\vec{p}>b$. If 
-  $\transpose{\vec{a}}\vec{p} < b$, the point $\vec{p}$ lays  in the
+  hyperplane $\cH$ if $\dotProd{\vec{a}}{\vec{p}}>b$. If 
+  $\dotProd{\vec{a}}{\vec{p}} < b$, the point $\vec{p}$ lays  in the
   \textit{right side} of hyperplane $\cH$.
 \item An hyperplane $\cH$ \textit{separates} two sets $\Set,\
   \Set'\subset\RR^d$ if  the points in $\Set$ lays in the same side
@@ -80,6 +80,7 @@ defined using
 $k$ points of $\RR^d$, called \textit{centroids}. Partitions using
 centroids have a very interesting property.
 \begin{lemma}
+\label{lem:properties_clusters}
   Given a set of point $\Set\subset \RR^{d}$ and
   $\vec{q_1},\ldots,\vec{q_k}\in\RR^d$, the partition $\Set_1,\ldots,
   \Set_k$ defined as 
@@ -241,6 +242,7 @@ all the nodes.
 The complexity of the algorithm is given in~\cite[Theorem
 2.2]{AvisFukuda}, which we enunciate here.
 \begin{theorem}
+\label{thm:complexity}
   Let   $(G, R, f)$ be a local search where  $G$ is
   given by a adjacency oracle $Adj$. Suppose that  $Adj(v)$ does not
   contain more than $\delta$ nodes for any $v\in V$. Then, if $t(f)$
@@ -300,7 +302,7 @@ local search function is given in Algorithm~\ref{alg:naive}.
   \REQUIRE an hyperplane $\cH$
   \STATE Let $\Set_1$ and $\Set_2$ the partition defined by $\cH$
   \FORALL{$\vec{p}$ in $\Set_2$}
-  \IF{There exists an hyperplane $\cH'$ that separate $\Set_1\cup
+  \IF{there exists an hyperplane $\cH'$ that separate $\Set_1\cup
     \{\vec{p}\}$ and $\Set_2 -\{\vec{p}\}$}
   \RETURN $\cH'$
   \ENDIF
@@ -317,69 +319,171 @@ hyperplanes that separates two sets of points and this can be quite
 expensive in term of time, see~\cite{Elizondo06}. 
 We adapt the proposal for the local search $(G, R, f)$ 
 in~\cite{SleumerMsc} because it is more efficient and only requires to
-find a separating hyperplane. Unlike Algorithm~\ref{alg:naive}, this
-local search function depends on $\vec{r}$.
+solve $n$ different linear equations in one variable. 
+Unlike Algorithm~\ref{alg:naive}, this local search function depends
+on $\cR$. 
 \begin{algorithm}
   \caption{local search function f}
   \label{alg:sleumer}
   \begin{algorithmic}
   \REQUIRE An hyperplane $\cH$ which separates $\Set$ and the
   hyperplane $\cR$
-  \ENSURE An hyperplane $\cH'$ which splits $\Set$
-  \STATE $\vec{p}_{min}=\vec{p}_1$
-  \FORALL{$\vec{p_k}$  in $\Set$}
-  \IF{$\vec{p}_k$==$MinDistance(\vec{p}_{min}, \vec{p}_k,\cH,\vec{r})$}
-  \STATE $\vec{p}_{min}=\vec{p}_1$
+  \ENSURE An hyperplane $\cH^{(t)}$ which splits $\Set$
+  \STATE $first\_minimum = 1$
+  \STATE $second\_minimum = 1$
+  \FORALL{$\vec{p}$  in $\Set$}
+  \IF{$0<Distance(\vec{p},\cH,\cR)<1$ and 
+    $first\_minimum > Distance(\vec{p},\cH,\cR)$}
+  \STATE $second\_minimum = first\_minimum$
+  \STATE $first\_minimum = Distance(\vec{p},\cH,\cR)$
   \ENDIF
   \ENDFOR
-  \STATE Let $\Set_1$ be the points laying at the left side of $\cH$ 
-  \STATE Let $\Set_2$ be the points laying at the right side of $\cH$
-  \RETURN An hyperplane separating $\Set_1\cup \{\vec{p}_{min}\}$ and 
-  $\Set_2 - \{\vec{p}_{min}\}$
+  \STATE $\epsilon= second\_minimum- first\_minimum$
+  \STATE $t = first\_minimum+\epsilon/2$
+  \RETURN $\cH^{(t)}$
   \end{algorithmic}
 \end{algorithm}
-Although in a   cryptic way, this function takes the point in the right
-side of $\cH$ that is the closest to hyperplane $\cH$ and then search
-for an hyperplane that separates the points of left side plus this
-one and the ones in the right side minus this point.
+Although in a   cryptic way, the geometric intuition of what this
+function does is simple. First, consider the two hyperplanes,
+\begin{equation}
+\label{eq:definition_H_R}
+  \cH = \{\vec{x}\in\RR^d : \dotProd{\vec{a}}{\vec{x}}=b\},
+  \quad
+  \cR = \{\vec{x}\in\RR^d : \dotProd{\vec{r}}{\vec{x}}=s\}.
+\end{equation}
+We remark that $\cR$ defines the trivial partition, because all points
+are in the left side of $\cR$. 
+
+Now, define the following set of hyperplanes,
+depending on a parameter $t$,
+\begin{equation*}
+  \cH^{(t)} = \{\vec{x}\in\RR^d : 
+  \dotProd{(t\vec{a}+(1-t)\vec{r})}{\vec{x}}=tb+ (1-t)s\},
+  \quad 0\le t \le 1.
+\end{equation*}
+It is trivial to see that $\cH^{(0)} = \cH$, $\cH^{(1)} = \cR$, for
+some value $0\le t\le 1$. Perturbating  $\cH$, in a way that
+it splits $\Set$ in the same way, we can suppose that 
+$\cH^{(t)}$ contains at most one point in $\Set$ for $0<t<1$. 
+
+In these conditions,
+there exists a value $0< t < 1$, such that 
+the partition defined by $\cH$ and $\cH^{(t)}$ differ in only one
+point $\vec{p}$. This point $\vec{p}$ lays in the right side of $\cH$
+and in the left side of $\cH^{(t)}$.  
+
+Algorithm~\ref{alg:sleumer} returns $\cH^{(t)}$ and  it is easy to check
+that satifies all the conditions of a local search.
 \begin{algorithm}
-  \caption{Algorithm MinDistance}
+  \caption{Algorithm Distance}
   \begin{algorithmic}
-  \REQUIRE Two hyperplanes $h_1,h_2$ and two different 
-  points $\vec{p},\vec{r}$
-  \ENSURE the hyperplane which intersects the segment closest to $\vec{p}$ 
-  \STATE
+  \REQUIRE Two hyperplanes $\cH, \cR$ and one point $\vec{p}$
+  \ENSURE the value $t$ such that $\cH^{(t)}$ contains $\vec{p}$
+  \STATE let $\vec{a}, \vec{r}, b, s$ as in
+  Equation~\eqref{eq:definition_H_R} 
+  \RETURN
   \begin{equation*}
-    c_1=\frac{-\dotProd{h_1}{\vec{p}}}{\dotProd{h_1}{(\vec{r}-\vec{p})}},
-    \quad c_2=
-    \frac{-\dotProd{h_2}{\vec{p}}}{\dotProd{h_2}{(\vec{r}-\vec{p})}}
+    \frac{\dotProd{\vec{r}}{\vec{p}}+s}
+    {\dotProd{(\vec{a}-\vec{r})}{\vec{p}}-b +s }
   \end{equation*}
-  \IF {$c_1>c_2$}
-  \STATE return $h_2$
-  \ELSIF{$c_1<c_2$}
-  \STATE return $h_1$
-  \ELSE
-  \STATE returns the minimum of $-h_1/\dotProd{h_1}{\vec{p}}$ and 
-  $-h_2/\dotProd{h_2}{\vec{p}}$ by the lexicographic order.
-  \ENDIF
   \end{algorithmic}
 \end{algorithm} 
 
 \subsubsection{The adjacency oracle}
 
 The adjacency oracle is just an algorithm which that returns which
-partitions are adjacents. Two partitions are adjacent if they differ
+partitions are adjacents. Again, we remark that  two partitions are
+adjacent if they differ 
 in only one point. This is equivalent to give which points are
 vertices of the convex hull of each of the clusters. 
-To know if a point is a vertices of the convex hull, it is only to 
-solve the following linear program,
+To know if a point $\vec{p}_i$ is a vertix of the convex hull can be done 
+solving the following linear program,
 \begin{eqnarray*}
-  \text{maximize }&\dotProd{\vec{p}}{\vec{x}},\\
-  \text{subject to}&\dotProd{\mat{A}}{\vec{x}}\le \vec{b},\\
-  &\dotProd{\vec{p}}{\vec{x}}\le t+1.\\
+  \text{maximize }&\dotProd{\vec{p_i}}{\vec{x}}-y,\\
+  \text{subject to}&
+  \begin{cases}
+    \dotProd{\vec{p}_j}{\vec{x}} - y\le 0,& \vec{p}_j\text{ lies in
+      the right side of the hyperplane}\\
+    \dotProd{\vec{p}_j}{\vec{x}} - y\ge 0,& \vec{p}_j\text{ lies in
+      the left side of the hyperplane}\\
+  \end{cases}\\
+  &j = 1,\ldots,n,\quad j\neq i.
 \end{eqnarray*}
-If the value is strictly greater than $t$, then the point is a
-vertices of the convex hull.
+If the value is strictly greater than $0$, then the point $\vec{p}_i$ is a
+vertex of the convex hull.
+
+\subsubsection{Time complexity of Reverse search}
+
+The time complexity of the algorithm is a direct application of
+Theorem~\ref{thm:complexity}. Also, notice that the algorithms here
+only required,
+\begin{itemize}
+\item the points in set $\Set$,
+\item the first hyperplane $\cR$,
+\item the current hyperplane $\cH$.
+\end{itemize}
+This means that it is only needed to keep track of $O(nd)$. Another
+important thing is that for any partition, there are at most $n$
+partitions that are adjacents. This is implied by the definition of
+adjacent partitions. Using this together and applying
+Theorem~\ref{thm:complexity}, we get the following result.
+\begin{theorem}
+  Let $l(n,d)$ be the number of operations necessary to solve a linear
+  programming problem with $n$ equations and $d$ variables and $P$ the
+  number of partitions of $\Set$ defined by two centroids. Then, 
+  the implementation of Reverse search algorithm has time complexity 
+  $O( l(n,d) n d P)$ operations  and space complexity $O(n d)$.
+\end{theorem}
+Notice that this algorithm is polynomial in the size of the number of
+different partitions. 
+\section{Reverse search for arbitrary $k$}
+The general case to enumerate all possible partitions of $k$ clusters
+uses the hyperplanes found  in the case $k=2$. 
+
+The hyperplanes found for $k=2$ can be used to find all possible
+clusters that appear in a partition of $\Set$ given by $k$ centroids.
+The idea is giving in the following lemma.
+\begin{lemma}
+  \label{lem:k-1-hyperplanes}
+  Suppose that $\{\cH_1,\ldots, \cH_s\}$ are a set of hyperplanes
+  satisfying that for any partitions  into two clusters
+  $\Set_1,\Set_2$ of $\Set$, there is an hyperplane $\cH_i$ that
+  separates $\Set_1,\Set_2$. Then, for any cluster $\Set_j$ of a
+  partition $\Set_1,\ldots, \Set_{k}$ of $\Set$ defined by $k$
+  centroids, there exists $k-1$ hyperplanes $\cH_{i_\ell},\ \ell = 1,\ldots,
+  k, \ell\neq j$ such that $\cH_{i_{\ell}}$ separates $\Set_{j}$ and
+  $\Set_{l}$. 
+\end{lemma}
+\begin{proof}
+  The proof is inmediate noticing that, by
+  Lemma~\ref{lem:properties_clusters}, there is an hyperplane
+  separating two different clusters. This hyperplanes also induces two
+  clusters in  $\Set$ which implies that there is an hyperplane in
+  $\{\cH_1,\ldots, \cH_s\}$ which separates this two
+  clusters. Repeating this process $k-1$ times, we get the result.
+\end{proof}
+Thanks to this results, it would be possible to make an algorithm to
+enumerate all possible partitions of $\Set$ into $k$ clusters. The
+idea would be the following,
+\begin{itemize}
+\item generate a set of all possible clusters that can appear
+  in a partition of $k$ clusters,
+\item for  $k$ elements of this set of clusters, check if they form a
+  partition, i. e. their intersection is empty and their union is
+  $\Set$. If that is the case, yield the clusters. 
+\end{itemize}
+It is not difficult to show that the time complexity of this algorithm
+is polynomial on the number of different clusters that can appear
+in a partition of $\Set$ into $k$ clusters\footnote{not on k} and this
+polynomial is of degree $k$. 
+
+We present a version of reverse search in order to obtain better
+complexity. We are presenting this as in the previous section,
+introducing all the elements necessary to define the reverse search
+procedure for this case.
+
+The graph $G = (V,E)$ is 
+
 \bibliographystyle{plain}
 \bibliography{bibliography}
 \end{document}
