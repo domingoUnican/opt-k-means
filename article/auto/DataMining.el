@@ -17,7 +17,8 @@
      "RR"
      "Set"
      "bSet"
-     "cR")
+     "cR"
+     "cC")
     (TeX-run-style-hooks
      "amsthm"
      "amssymb"

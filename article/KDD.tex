@@ -429,17 +429,23 @@ adjacent partitions. Using this together and applying
 Theorem~\ref{thm:complexity}, we get the following result.
 \begin{theorem}
   Let $l(n,d)$ be the number of operations necessary to solve a linear
-  programming problem with $n$ equations and $d$ variables and $P$ the
-  number of partitions of $\Set$ defined by two centroids. Then, 
+  programming problem with $n$ equations and $d$ variables and $P$ be
+  the number of partitions of $\Set$ defined by two centroids. Then, 
   the implementation of Reverse search algorithm has time complexity 
   $O( l(n,d) n d P)$ operations  and space complexity $O(n d)$.
 \end{theorem}
 Notice that this algorithm is polynomial in the size of the number of
 different partitions. 
 \section{Reverse search for arbitrary $k$}
-The general case to enumerate all possible partitions of $k$ clusters
-uses the hyperplanes found  in the case $k=2$. 
+The general clustering problem is done enumerating all possible
+partitions with less than $k$ clusters. This correspond to allowing a
+partition to have empty clusters and it is not difficult to check
+that the number of partitions with no empty clusters and with empty
+clusters are of the same order of magnitude. So, we study the general
+case of enumerate all possible partitions with empty clusters.
 
+The general case to enumerate all possible partitions of at most $k$
+clusters uses the hyperplanes found  in the case $k=2$. 
 The hyperplanes found for $k=2$ can be used to find all possible
 clusters that appear in a partition of $\Set$ given by $k$ centroids.
 The idea is giving in the following lemma.
@@ -475,15 +481,64 @@ idea would be the following,
 It is not difficult to show that the time complexity of this algorithm
 is polynomial on the number of different clusters that can appear
 in a partition of $\Set$ into $k$ clusters\footnote{not on k} and this
-polynomial is of degree $k$. 
+polynomial is of degree at least $k$. 
 
 We present a version of reverse search in order to obtain better
-complexity. We are presenting this as in the previous section,
+complexity. 
+Among other properties, the algorithm enumerates all possible
+partitions without repeating partitions with reordered clusters.
+We are presenting this as in the previous section,
 introducing all the elements necessary to define the reverse search
-procedure for this case.
+procedure for this case. 
 
-The graph $G = (V,E)$ is 
+The graph $G = (V,E)$ is defined in the following way, any vertex is a
+partition which is represented as a set of at most $k$ binary list.
+Each list $v$ has length $n$ and represents a cluster in the following
+way, a point $\vec{p}_i$ belongs to the cluster if and only if $v[i] =
+1$. Two vertices $v, v'$ are adjacent if and only if one can be
+transform in the other by moving only one point from one cluster of
+the partition to another. Using this definitions, it is easy to define
+the local search and adjacency oracle. For all algorithms, it is
+implicitly supposed that all possible clusters that can appear in a
+partition of $k$ clusters has been previously calculated. The
+calculation of all possible clusters does not affect the total
+complexity of the algorithm for enumerating partitions, because this
+calculations is done in linear time in the number of different
+enumerating partitions. These clusters are kept in a set $\cC$.
 
+
+The local search is defined in a very simple way. The set $R$ of
+solutions is just the trivial partition, where all the points belong
+to one cluster. The local search function takes a partition and tries
+to pass one point of the ``smallest'' cluster  a  ``bigger''
+cluster. The algorithm is,
+\begin{itemize}
+\item Take the cluster with the smallest number of elements or
+  clusters if there are several of them,
+\item for each point of the selected clusters, move this point to the
+  different clusters and check when this form a valid partition,
+  i. e. all the clusters belong to $\cC$.
+\item select the valid partition where the point moved to the cluster
+  with the biggest number of elements. If there are several points
+  which go to clusters with the same number of elements, move the
+  point with smallest index.
+\end{itemize}
+This description should be enough to implement. The adjacency oracle
+works in a similar way. So given a partition, take every point in
+$\Set$, move it to each of the clusters or add it to a new cluster.
+Again, we can measure the efficiency of this algorithm, thanks to
+Theorem~\ref{thm:complexity}. It is important to notice that any $v\in
+V$ has at most $n$ neighbors, so $|E|$ is at most $n|V|$ and to check
+the pertenence of an element to a set of $N$ elements can be done in
+$\log N$
+\begin{theorem}
+  Let $P$  be the
+  number of partitions of $\Set$ defined by $k$ centroids and $N$ be
+  the number of different clusters which appears in some of these
+  partitions. Then, the implementation of Reverse search algorithm has
+  time complexity $O(P n^2 dk\log n)$ operations  and space complexity
+  $O(N)$. 
+\end{theorem}
 \bibliographystyle{plain}
 \bibliography{bibliography}
 \end{document}
