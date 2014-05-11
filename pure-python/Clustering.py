@@ -1,10 +1,12 @@
+#!/opt/local/bin/python2.7
 # -*- coding: utf-8 -*-
 #Class Arrangement
-import csv, os, time
+import csv, os, time, pickle
 from copy import copy
 from Arrangement import Arrangement
 from Enumerator import ensure_dir
 from argparse import ArgumentParser
+from Tree import genera_arboles
 
 K = float
 
@@ -50,7 +52,7 @@ class Cluster2:
         '''
         bound = max(max(self.points))
         points_aux = [[ K(i) for i in l] for l in self.points]
-        pointR = [bound] + [0] * self.d
+        pointR = [-K(bound)] + [0] * self.d
         ar =  Arrangement(points_aux, pointR, processes = self.processes)
         for l in ar.reverse_m({tuple([1]*len(self.points))}):
             yield l
@@ -58,9 +60,9 @@ class Cluster2:
 
 if __name__=='__main__':
     dppoint=2
-    points=10
+    points=3
     filen="linux.txt"
-    nproc=12
+    nproc=2
     d_s = 'Calculate the optimum k-means centroids for a given dataset'
     parser = ArgumentParser(description=d_s)
     parser.add_argument('-f','--file', help='Filename of dataset,\
@@ -88,9 +90,10 @@ if __name__=='__main__':
         lector = csv.reader(csvfile, delimiter = ',')
         filas = list(lector)
         data = [row[:dppoint] for row in filas[:points]]
-
-    print data
     d = Cluster2(data,processes = nproc)
-    t1=time.time()
-    for j in d.codes():
-        print j
+    signos = tuple(j for j in d.codes_m_launch())
+    with open('output','w') as f:
+        for arbol in genera_arboles(signos):
+            arbol.rename()
+            f.write(arbol.to_string())
+            f.write('\n')

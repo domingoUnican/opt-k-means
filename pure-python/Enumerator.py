@@ -29,7 +29,7 @@ class Enumerator:
         """
         self.filename = filename
         self.directory = directory
-        self.m_file = os.path.join(self.directory, 
+        self.m_file = os.path.join(self.directory,
                                    self.filename)
         self.processes = processes
         ensure_dir(self.directory)
@@ -74,7 +74,7 @@ class Enumerator:
         then given back to the user as a generator.
         """
         several_elements = S
-        while len(several_elements) <= self.processes:
+        while several_elements and len(several_elements) < self.processes:
             for element in several_elements:
                 yield element
             new_elements = []
@@ -83,6 +83,8 @@ class Enumerator:
                     if self.f(v) == s:
                         new_elements.append(v)
             several_elements = new_elements
+        if not several_elements:
+            raise StopIteration 
         length = len(several_elements)
         proc = self.processes
         p_list = []
@@ -104,7 +106,7 @@ class Enumerator:
             with open(m_file) as f:
                 for l in pickle.load(f):
                     yield l
-            
+
 
     def reverse_search(self, S):
         """
