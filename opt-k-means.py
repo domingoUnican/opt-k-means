@@ -204,7 +204,7 @@ class dataset:
         '''
         return the inter cluster measure of a partition.
         clusters is a list of indicator functions, e. g.
-        clusters[i] is a vector of 0 and 1's such that if
+        clusters[i] is a vector of 0 and 1s such that if
         self.data[j] in C_i iff clusters[i][j] == 1.
         To save just a litte of memory, the length of clusters is
         going to be k-1. The points in C_{k-1} are the points that are
@@ -212,7 +212,7 @@ class dataset:
         the mass centers are important, the intra_cluster measure
         depends heavily in the intra_cluster measure and it is not
         difficult to find examples, where the intracluster measure is
-        smaller taking "fake" centroids.
+        smaller taking fake centroids.
         '''
 
         partition = []
@@ -591,7 +591,6 @@ if __name__=='__main__':
         warnings.simplefilter("ignore")
         d=dataset(dppoint,points,filen,processes = nproc)
     t1=time.time()
-    print d.data
     d.find_optimum_two_launch()
     min_dist = numpy.infty
     min_par = []
@@ -616,9 +615,9 @@ if __name__=='__main__':
         for i in izip(*min_par):
             list_par.append( i.index(1))
     print MESSAGE %(k, min_dist)
-    print d.data
     with open(d.m_file[:-1],'w') as f:
         f.write(str(min_dist))
         f.write('\n')
-        f.write(str(list(list_par)))
+        f.write(str(list(min_par)))
+        f.write('\n')
     print "time: %.2f" %(time.time()-t1,)
